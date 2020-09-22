@@ -73,7 +73,7 @@ class Player {
   }
 
   draw(img, x, y) {
-    ctx.drawImage(blastSheet, img.x, img.y, img.w, img.h, x, y, 32, 32);
+    ctx.drawImage(blastSheet, img.x, img.y, img.w, img.h, x, y, img.w, img.h);
   }
 
   move(x, y) {
@@ -119,8 +119,8 @@ class Shot {
 
 function shoot() {
   isShot = true;
-  let shot = new Shot();
-  shots.push(shot);
+  //let shot = new Shot();
+  //shots.push(shot);
 }
 
 class KeyState {
@@ -177,13 +177,13 @@ class KeyState {
     if (this.right) player.move(8, 0);
     if (this.up) player.move(0, -8);
     if (this.down) player.move(0, 8);
-    if (this.space) shoot();
+    if (this.space) isShot = true; //shoot();
   }
 }
 let keyState = new KeyState;
 
 document.onkeydown = function(event) {
-  console.log("press");
+  //console.log("press");
   if (event.code === "ArrowUp") keyState.up = true;
   if (event.code === "ArrowDown") keyState.down = true;
   if (event.code === "ArrowLeft") keyState.left = true;
@@ -222,10 +222,8 @@ let shot2 = new Sprite(32, 0, 32, 5);
 let shot3 = new Sprite(64, 0, 32, 5);
 
 let flyingShot = new Sprite(96, 0, 32, 10);
-let ship = ship1;
 
 let isShot = false;
-
 
 let shotPng = shot1;
 
@@ -245,7 +243,6 @@ let gameLoop = setInterval(function() {
     player.draw(ship1, player.x, player.y);
   }
 
-
   shots.forEach(function(x) {
     if (x.y < 0) {
       shots.shift();
@@ -256,7 +253,7 @@ let gameLoop = setInterval(function() {
 
   if (isShot) {
 
-    ctx.drawImage(blastSheet, shotPng.x, shotPng.y, shotPng.w, shotPng.h, player.x, player.y, shotPng.w, shotPng.h);
+    ctx.drawImage(blastSheet, shotPng.x, shotPng.y, shotPng.w, shotPng.h, player.x, player.y - 5, shotPng.w, shotPng.h);
     if (shotPng === shot1) {
       shotPng = shot2;
     } else if (shotPng === shot2) {
@@ -264,6 +261,8 @@ let gameLoop = setInterval(function() {
     } else {
       isShot = false;
       shotPng = shot1;
+      let shotX = new Shot();
+      shots.push(shotX);
     }
   }
 
