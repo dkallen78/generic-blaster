@@ -51,9 +51,11 @@ class Sprite {
 }
 
 class Player {
-  constructor(originX = 0, originY = 0) {
+  constructor(originX = 0, originY = 0, sprites) {
     this._x = originX;
     this._y = originY;
+    this._sprites = sprites;
+    this._sprite = 0;
   }
 
   set x(change) {
@@ -72,7 +74,24 @@ class Player {
     return this._y;
   }
 
-  draw(img, x, y) {
+  get sprite() {
+    return this._sprite;
+  }
+
+  set sprite(num) {
+    this._sprite = num;
+  }
+
+  get sprites() {
+    return this._sprites;
+  }
+
+  sprt(num) {
+    return this.sprites[num % this.sprites.length];
+  }
+
+  draw(x, y) {
+    let img = this.sprt(this.sprite);
     ctx.drawImage(blastSheet, img.x, img.y, img.w, img.h, x, y, img.w, img.h);
   }
 
@@ -85,6 +104,12 @@ class Player {
       && this.y + y > 0) {
         this.y = this.y + y;
     }
+  }
+}
+
+class Enemy extends Player {
+  constructor(originX, originY, sprites) {
+    super(originX, originY, sprites);
   }
 }
 
@@ -115,12 +140,6 @@ class Shot {
     ctx.drawImage(blastSheet, flyingShot.x, flyingShot.y, flyingShot.w, flyingShot.h, this.x, this.y, flyingShot.w, flyingShot.h);
   }
 
-}
-
-function shoot() {
-  isShot = true;
-  //let shot = new Shot();
-  //shots.push(shot);
 }
 
 class KeyState {
@@ -177,7 +196,7 @@ class KeyState {
     if (this.right) player.move(8, 0);
     if (this.up) player.move(0, -8);
     if (this.down) player.move(0, 8);
-    if (this.space) isShot = true; //shoot();
+    if (this.space) isShot = true;
   }
 }
 let keyState = new KeyState;
@@ -209,13 +228,21 @@ gameCanvas.setAttribute("width", canvasWidth);
 
 let ctx = gameCanvas.getContext("2d");
 
-let player = new Player(320, 320);
-
 let blastSheet = new Image();
 blastSheet.src = "blastSheet.png";
-let ship1 = new Sprite(0, 5, 32, 32);
-let ship2 = new Sprite(32, 5, 32, 32);
-let ship3 = new Sprite(64, 5, 32, 32);
+
+let ship1 = new Sprite(0, 5, 32, 27);
+let ship2 = new Sprite(32, 5, 32, 27);
+let ship3 = new Sprite(64, 5, 32, 27);
+
+let player = new Player(320, 320, [ship1, ship2, ship3]);
+
+let enemy1 = new Sprite(0, 32, 32, 32);
+let enemy2 = new Sprite(32, 32, 32, 32);
+let enemy3 = new Sprite(0, 32, 32, 32);
+let enemy4 = new Sprite(64, 32, 32, 32);
+
+let enemy = new Enemy(256, 32, [enemy1, enemy2, enemy3, enemy4]);
 
 let shot1 = new Sprite(0, 0, 32, 5);
 let shot2 = new Sprite(32, 0, 32, 5);
@@ -235,13 +262,19 @@ let gameLoop = setInterval(function() {
 
   keyState.update();
 
-  if (loopCount % 3 === 0) {
-    player.draw(ship3, player.x, player.y);
-  } else if (loopCount % 2 === 0) {
-    player.draw(ship2, player.x, player.y);
-  } else {
-    player.draw(ship1, player.x, player.y);
+  if (loopCount % 5 === 0) {
+    enemy.sprite++;
   }
+
+  if (loopCount % 2 === 0) {
+    player.sprite++;
+  }
+
+  player.draw(player.x, player.y);
+  enemy.draw(enemy.x, enemy.y);
+
+
+
 
   shots.forEach(function(x) {
     if (x.y < 0) {
@@ -249,7 +282,7 @@ let gameLoop = setInterval(function() {
     } else {
       x.draw();
     }
-  })
+  });
 
   if (isShot) {
 
