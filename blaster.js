@@ -54,9 +54,12 @@ class Player {
   constructor(originX = 0, originY = 0, sprites) {
     this._x = originX;
     this._y = originY;
+    this._w = sprites[0].w;
+    this._h = sprites[0].h;
     this._sprites = sprites;
     this._sprite = 0;
     this._colliders = [];
+    this._death = [];
   }
 
   set x(change) {
@@ -75,6 +78,14 @@ class Player {
     return this._y;
   }
 
+  get w() {
+    return this._w;
+  }
+
+  get h() {
+    return this._h;
+  }
+
   get sprite() {
     return this._sprite;
   }
@@ -89,6 +100,14 @@ class Player {
 
   get colliders() {
     return this._colliders;
+  }
+
+  get death() {
+    return this._death;
+  }
+
+  set death(array) {
+    this._death = array;
   }
 
   addCollider(array) {
@@ -120,9 +139,10 @@ class Player {
 
   update(x, y) {
     if (this.collide(shots)) {
-      console.log("Hit!");
-    };
-    this.draw(x, y);
+      this.die();
+    } else {
+      this.draw(x, y);
+    }
   }
 
   draw(x, y) {
@@ -139,6 +159,10 @@ class Player {
       && this.y + y > 0) {
         this.y = this.y + y;
     }
+  }
+
+  die() {
+    console.log("ded");
   }
 }
 
@@ -282,13 +306,18 @@ let ship3 = new Sprite(64, 5, 32, 27);
 
 let player = new Player(320, 320, [ship1, ship2, ship3]);
 
-
 let enemy1 = new Sprite(0, 32, 32, 32);
 let enemy2 = new Sprite(32, 32, 32, 32);
 let enemy3 = new Sprite(0, 32, 32, 32);
 let enemy4 = new Sprite(64, 32, 32, 32);
 
+let enemyDeath1 = new Sprite(0, 64, 32, 32);
+let enemyDeath2 = new Sprite(32, 64, 32, 32);
+let enemyDeath3 = new Sprite(64, 96, 32, 32);
+let enemyDeath4 = new Sprite(96, 128, 32, 32);
+
 let enemy = new Enemy(256, 32, [enemy1, enemy2, enemy3, enemy4]);
+enemy.death = [enemyDeath1, enemyDeath2, enemyDeath3, enemyDeath4];
 let enemies = [];
 enemies.push(enemy);
 
@@ -324,10 +353,7 @@ let gameLoop = setInterval(function() {
 
   player.update(player.x, player.y);
   enemy.update(enemy.x, enemy.y);
-
-
-
-
+  
   shots.forEach(function(x) {
     if (x.y < 0) {
       shots.shift();
