@@ -27,12 +27,25 @@ function rnd (floor, ceiling) {
 }
 
 class Sprite {
+  //----------------------------------------------------//
+  //A data structure for holding information about      //
+  //  sprites in relation to their position on the      //
+  //  sprite sheet                                      //
+  //----------------------------------------------------//
+
   constructor(x, y, w, h) {
+    //--------------------------------------------------//
+    //integer-> x, y: the top left corner of the sprite //
+    //  on the sprite sheet                             //
+    //integer-> w, h: the height and width of the sprite//
+    //--------------------------------------------------//
+
     this._x = x;
     this._y = y;
     this._h = h;
     this._w = w;
   }
+
   get x() {
     return this._x;
   }
@@ -51,7 +64,27 @@ class Sprite {
 }
 
 class Player {
+  //----------------------------------------------------//
+  //A data structure for holding information and methods//
+  //  about the player's ship                           //
+  //----------------------------------------------------//
+
   constructor(originX = 0, originY = 0, sprites) {
+    //--------------------------------------------------//
+    //integer-> originX, originY: initial position of   //
+    //  the player's ship                               //
+    //array(Sprite)-> sprites: the sprites used in the  //
+    //  default animation of the ship                   //
+    //--------------------------------------------------//
+    //integer-> _w,_h: height and width of the ship     //
+    //integer-> _sprite: index of the sprite in the     //
+    //  [_sprites] array to use                         //
+    //array-> _colliders: array of items to check for   //
+    //  collisions                                      //
+    //array(Sprite)-> _death: sprites to use for the    //
+    //  death animation                                 //
+    //--------------------------------------------------//
+
     this._x = originX;
     this._y = originY;
     this._w = sprites[0].w;
@@ -111,6 +144,13 @@ class Player {
   }
 
   addCollider(array) {
+    //--------------------------------------------------//
+    //Adds an array of colliders to the ships collision //
+    //  detectors                                       //
+    //array-> array: the array of items to check against//
+    //  for collisions                                  //
+    //--------------------------------------------------//
+
     this._colliders.push(array);
   }
 
@@ -119,6 +159,11 @@ class Player {
   }
 
   collide() {
+    //--------------------------------------------------//
+    //Checks the [this.colliders] array to see if a     //
+    //  collision has occurred                          //
+    //return-> boolean: true for collision              //
+    //--------------------------------------------------//
 
     let self = this.sprt(0);
 
@@ -138,6 +183,13 @@ class Player {
   }
 
   update(x, y) {
+    //--------------------------------------------------//
+    //The actions that need to be taken during each     //
+    //  loop of the game loop                           //
+    //integer-> x, y: the position at which to draw the //
+    //  ship                                            //
+    //--------------------------------------------------//
+
     if (this.collide(shots)) {
       this.die();
     } else {
@@ -146,11 +198,23 @@ class Player {
   }
 
   draw(x, y) {
+    //--------------------------------------------------//
+    //Draws the ship on the screen                      //
+    //integer-> x, y: Where to draw the ship            //
+    //--------------------------------------------------//
+
     let img = this.sprt(this.sprite);
     ctx.drawImage(blastSheet, img.x, img.y, img.w, img.h, x, y, img.w, img.h);
   }
 
   move(x, y) {
+    //--------------------------------------------------//
+    //Updates the ship's position and prevents it from  //
+    //  leaving the bounds of the <canvas>              //
+    //integer-> x, y: How much to change the position   //
+    //  of the ship                                     //
+    //--------------------------------------------------//
+
     if (this.x + x < canvasWidth - 32
       && this.x + x > 0) {
         this.x = this.x + x;
@@ -167,12 +231,22 @@ class Player {
 }
 
 class Enemy extends Player {
+  //----------------------------------------------------//
+  //A data structure for the enemy ships. Identical to  //
+  //  the Player class for now                          //
+  //----------------------------------------------------//
+
   constructor(originX, originY, sprites) {
     super(originX, originY, sprites);
   }
 }
 
 class Shot {
+  //----------------------------------------------------//
+  //A data structure for holding information about      //
+  //  the shots fired by the player                     //
+  //----------------------------------------------------//
+
   constructor(originX = player.x, originY = player.y) {
     this._x = originX;
     this._y = originY;
@@ -353,7 +427,7 @@ let gameLoop = setInterval(function() {
 
   player.update(player.x, player.y);
   enemy.update(enemy.x, enemy.y);
-  
+
   shots.forEach(function(x) {
     if (x.y < 0) {
       shots.shift();
