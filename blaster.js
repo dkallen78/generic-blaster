@@ -93,6 +93,7 @@ class Player {
     this._sprite = 0;
     this._colliders = [];
     this._death = [];
+    this._dead = false;
   }
 
   set x(change) {
@@ -131,6 +132,10 @@ class Player {
     return this._sprites;
   }
 
+  set sprites(array) {
+    this._sprites = array;
+  }
+
   get colliders() {
     return this._colliders;
   }
@@ -141,6 +146,14 @@ class Player {
 
   set death(array) {
     this._death = array;
+  }
+
+  get dead() {
+    return this._dead;
+  }
+
+  set dead(change) {
+    this._dead = change;
   }
 
   addCollider(array) {
@@ -182,7 +195,7 @@ class Player {
     return false;
   }
 
-  update(x, y) {
+  update(x, y, i) {
     //--------------------------------------------------//
     //The actions that need to be taken during each     //
     //  loop of the game loop                           //
@@ -190,11 +203,15 @@ class Player {
     //  ship                                            //
     //--------------------------------------------------//
 
-    if (this.collide(shots)) {
+    if (this.collide(shots) && !this.dead) {
       this.die();
+    }
+    if (this.dead && this.sprite >= this.sprites.length) {
+      //enemies.splice(i, 1);
     } else {
       this.draw(x, y);
     }
+
   }
 
   draw(x, y) {
@@ -226,7 +243,9 @@ class Player {
   }
 
   die() {
-    console.log("ded");
+    this.dead = true;
+    this.sprites = this.death;
+    this.sprite = 0;
   }
 }
 
@@ -239,6 +258,29 @@ class Enemy extends Player {
   constructor(originX, originY, sprites) {
     super(originX, originY, sprites);
   }
+
+  update(x, y, i) {
+    //--------------------------------------------------//
+    //The actions that need to be taken during each     //
+    //  loop of the game loop                           //
+    //integer-> x, y: the position at which to draw the //
+    //  ship                                            //
+    //integer-> i: enemy's index in the enemy array     //
+    //--------------------------------------------------//
+    //
+    //If there is a collision and it's not dead, kill it
+    if (this.collide(shots) && !this.dead) {
+      this.die();
+    }
+    //
+    //If it's dead and animated, remove it,
+    //  otherwise draw it.
+    if (this.dead && this.sprite >= this.sprites.length) {
+      enemies.splice(i, 1);
+    } else {
+      this.draw(x, y);
+    }
+  }
 }
 
 class Shot {
@@ -248,6 +290,13 @@ class Shot {
   //----------------------------------------------------//
 
   constructor(originX = player.x, originY = player.y) {
+    //--------------------------------------------------//
+    //integer-> originX, originY: where to first place  //
+    //  the shot sprite                                 //
+    //--------------------------------------------------//
+    //integer-> _w, _h: width and height of the sprite  //
+    //--------------------------------------------------//
+
     this._x = originX;
     this._y = originY;
     this._w = flyingShot.w;
@@ -279,6 +328,11 @@ class Shot {
   }
 
   draw() {
+    //--------------------------------------------------//
+    //Draws the sprite, advancing it 16 pixesls for     //
+    //  each frame                                      //
+    //--------------------------------------------------//
+
     this.y = this.y - 16;
     ctx.drawImage(blastSheet, flyingShot.x, flyingShot.y, flyingShot.w, flyingShot.h, this.x, this.y, this.w, this.h);
   }
@@ -286,7 +340,16 @@ class Shot {
 }
 
 class KeyState {
+  //----------------------------------------------------//
+  //A data structure for holding information about      //
+  //  which keys have been pressed                      //
+  //----------------------------------------------------//
+
   constructor() {
+    //----------------------------------------------------//
+    //boolean-> _all: the state of each key press         //
+    //----------------------------------------------------//
+
     this._left = false;
     this._right = false;
     this._up = false;
@@ -335,6 +398,10 @@ class KeyState {
   }
 
   update() {
+    //--------------------------------------------------//
+    //What to do if a particular key has been pressed   //
+    //--------------------------------------------------//
+
     if (this.left) player.move(-8, 0);
     if (this.right) player.move(8, 0);
     if (this.up) player.move(0, -8);
@@ -345,6 +412,11 @@ class KeyState {
 let keyState = new KeyState;
 
 document.onkeydown = function(event) {
+  //----------------------------------------------------//
+  //Listens for a key to be pressed down                //
+  //event-> event: the key down event                   //
+  //----------------------------------------------------//
+
   //console.log("press");
   if (event.code === "ArrowUp") keyState.up = true;
   if (event.code === "ArrowDown") keyState.down = true;
@@ -354,6 +426,11 @@ document.onkeydown = function(event) {
 }
 
 document.onkeyup = function(event) {
+  //----------------------------------------------------//
+  //Listens for a key to be released                    //
+  //event-> event: the keyboard event                   //
+  //----------------------------------------------------//
+
   //console.log("press");
   if (event.code === "ArrowUp") keyState.up = false;
   if (event.code === "ArrowDown") keyState.down = false;
@@ -361,16 +438,20 @@ document.onkeyup = function(event) {
   if (event.code === "ArrowRight") keyState.right = false;
   if (event.code === "Space" ) keyState.space = false;
 }
-
+//
+//Making the <canvas> element and placing it in
+//  the body
 let gameCanvas = makeElement("canvas", "gameCanvas");
 document.body.appendChild(gameCanvas);
 const canvasHeight = 480;
 const canvasWidth = 720;
 gameCanvas.setAttribute("height", canvasHeight);
 gameCanvas.setAttribute("width", canvasWidth);
-
+//
+//Setting the context
 let ctx = gameCanvas.getContext("2d");
-
+//
+//Loading the sprite sheet
 let blastSheet = new Image();
 blastSheet.src = "blastSheet.png";
 
@@ -387,8 +468,8 @@ let enemy4 = new Sprite(64, 32, 32, 32);
 
 let enemyDeath1 = new Sprite(0, 64, 32, 32);
 let enemyDeath2 = new Sprite(32, 64, 32, 32);
-let enemyDeath3 = new Sprite(64, 96, 32, 32);
-let enemyDeath4 = new Sprite(96, 128, 32, 32);
+let enemyDeath3 = new Sprite(64, 64, 32, 32);
+let enemyDeath4 = new Sprite(96, 64, 32, 32);
 
 let enemy = new Enemy(256, 32, [enemy1, enemy2, enemy3, enemy4]);
 enemy.death = [enemyDeath1, enemyDeath2, enemyDeath3, enemyDeath4];
@@ -409,7 +490,9 @@ let shotPng = shot1;
 
 let shots = [];
 
-enemy.addCollider(shots)
+enemy.addCollider(shots);
+
+let kill = [];
 
 let loopCount = 0;
 let gameLoop = setInterval(function() {
@@ -417,7 +500,7 @@ let gameLoop = setInterval(function() {
 
   keyState.update();
 
-  if (loopCount % 5 === 0) {
+  if (loopCount % 2 === 0) {
     enemy.sprite++;
   }
 
@@ -426,7 +509,7 @@ let gameLoop = setInterval(function() {
   }
 
   player.update(player.x, player.y);
-  enemy.update(enemy.x, enemy.y);
+  enemies.forEach((x, i) => x.update(x.x, x.y, i));
 
   shots.forEach(function(x) {
     if (x.y < 0) {
