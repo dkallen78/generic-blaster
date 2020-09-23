@@ -56,6 +56,7 @@ class Player {
     this._y = originY;
     this._sprites = sprites;
     this._sprite = 0;
+    this._colliders = [];
   }
 
   set x(change) {
@@ -86,8 +87,42 @@ class Player {
     return this._sprites;
   }
 
+  get colliders() {
+    return this._colliders;
+  }
+
+  addCollider(array) {
+    this._colliders.push(array);
+  }
+
   sprt(num) {
     return this.sprites[num % this.sprites.length];
+  }
+
+  collide() {
+
+    let self = this.sprt(0);
+
+    for (let i = 0; i < this.colliders.length; i++) {
+      for (let j = 0; j < this.colliders[i].length; j++) {
+        if (this.x < this.colliders[i][j].x + this.colliders[i][j].w &&
+            this.x + self.w > this.colliders[i][j].x &&
+            this.y < this.colliders[i][j].y + this.colliders[i][j].h &&
+            this.y + self.h > this.colliders[i][j].y) {
+              //console.log(this.x, self.w, this.y, self.h);
+              //console.log(this.colliders[i][j]);
+              return true;
+            }
+      }
+    }
+    return false;
+  }
+
+  update(x, y) {
+    if (this.collide(shots)) {
+      console.log("Hit!");
+    };
+    this.draw(x, y);
   }
 
   draw(x, y) {
@@ -114,9 +149,11 @@ class Enemy extends Player {
 }
 
 class Shot {
-  constructor(originX = player.x, originY = player.y + 8) {
+  constructor(originX = player.x, originY = player.y) {
     this._x = originX;
     this._y = originY;
+    this._w = flyingShot.w;
+    this._h = flyingShot.h;
   }
 
   set x(change) {
@@ -135,9 +172,17 @@ class Shot {
     return this._y;
   }
 
+  get w() {
+    return this._w;
+  }
+
+  get h() {
+    return this._h;
+  }
+
   draw() {
     this.y = this.y - 16;
-    ctx.drawImage(blastSheet, flyingShot.x, flyingShot.y, flyingShot.w, flyingShot.h, this.x, this.y, flyingShot.w, flyingShot.h);
+    ctx.drawImage(blastSheet, flyingShot.x, flyingShot.y, flyingShot.w, flyingShot.h, this.x, this.y, this.w, this.h);
   }
 
 }
@@ -237,12 +282,17 @@ let ship3 = new Sprite(64, 5, 32, 27);
 
 let player = new Player(320, 320, [ship1, ship2, ship3]);
 
+
 let enemy1 = new Sprite(0, 32, 32, 32);
 let enemy2 = new Sprite(32, 32, 32, 32);
 let enemy3 = new Sprite(0, 32, 32, 32);
 let enemy4 = new Sprite(64, 32, 32, 32);
 
 let enemy = new Enemy(256, 32, [enemy1, enemy2, enemy3, enemy4]);
+let enemies = [];
+enemies.push(enemy);
+
+player.addCollider(enemies);
 
 let shot1 = new Sprite(0, 0, 32, 5);
 let shot2 = new Sprite(32, 0, 32, 5);
@@ -255,6 +305,8 @@ let isShot = false;
 let shotPng = shot1;
 
 let shots = [];
+
+enemy.addCollider(shots)
 
 let loopCount = 0;
 let gameLoop = setInterval(function() {
@@ -270,8 +322,8 @@ let gameLoop = setInterval(function() {
     player.sprite++;
   }
 
-  player.draw(player.x, player.y);
-  enemy.draw(enemy.x, enemy.y);
+  player.update(player.x, player.y);
+  enemy.update(enemy.x, enemy.y);
 
 
 
