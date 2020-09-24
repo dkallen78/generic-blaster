@@ -512,56 +512,39 @@ class KeyState {
     if (this.space) isShot = true;
   }
 
-  static gameKeysDown(event) {
-    if (event.code === "ArrowUp") this.up = true;
-    if (event.code === "ArrowDown") this.down = true;
-    if (event.code === "ArrowLeft") this.left = true;
-    if (event.code === "ArrowRight") this.right = true;
-    if (event.code === "Space" ) this.space = true;
-  }
-
 }
 let keyState = new KeyState;
 
 function gameKeysDown(event) {
-  if (event.code === "ArrowUp") keyState.up = true;
-  if (event.code === "ArrowDown") keyState.down = true;
-  if (event.code === "ArrowLeft") keyState.left = true;
-  if (event.code === "ArrowRight") keyState.right = true;
-  if (event.code === "Space" ) keyState.space = true;
-}
-
-//document.onkeydown = gameKeysDown(event);
-
-document.addEventListener("keydown", KeyState.gameKeysDown);
-
-/*document.onkeydown = function(event) {
   //----------------------------------------------------//
   //Listens for a key to be pressed down                //
   //event-> event: the key down event                   //
   //----------------------------------------------------//
 
-  //console.log("press");
   if (event.code === "ArrowUp") keyState.up = true;
   if (event.code === "ArrowDown") keyState.down = true;
   if (event.code === "ArrowLeft") keyState.left = true;
   if (event.code === "ArrowRight") keyState.right = true;
   if (event.code === "Space" ) keyState.space = true;
-}*/
+}
 
-document.onkeyup = function(event) {
+function gameKeysUp(event) {
   //----------------------------------------------------//
   //Listens for a key to be released                    //
   //event-> event: the keyboard event                   //
   //----------------------------------------------------//
 
-  //console.log("press");
   if (event.code === "ArrowUp") keyState.up = false;
   if (event.code === "ArrowDown") keyState.down = false;
   if (event.code === "ArrowLeft") keyState.left = false;
   if (event.code === "ArrowRight") keyState.right = false;
   if (event.code === "Space" ) keyState.space = false;
 }
+
+document.addEventListener("keydown", gameKeysDown);
+
+document.addEventListener("keyup", gameKeysUp);
+
 //
 //Making the <canvas> element and placing it in
 //  the body
@@ -578,13 +561,79 @@ let ctx = gameCanvas.getContext("2d");
 //Loading the sprite sheet
 let blastSheet = new Image();
 blastSheet.src = "blastSheet.png";
+
+let whiteFont = new Image();
+whiteFont.src = "8-bitFontWhite.png";
+whiteFont.addEventListener("load", x => {
+  write2screen("center", 100, "new game");
+})
+
+function write2screen(xPos, yPos, string) {
+  let chars = {
+    "A": new Sprite(0, 0, 8, 8),
+    "B": new Sprite(8, 0, 8, 8),
+    "C": new Sprite(16, 0, 8, 8),
+    "D": new Sprite(24, 0, 8, 8),
+    "E": new Sprite(32, 0, 8, 8),
+    "F": new Sprite(40, 0, 8, 8),
+    "G": new Sprite(48, 0, 8, 8),
+    "H": new Sprite(56, 0, 8, 8),
+    "I": new Sprite(0, 8, 8, 8),
+    "J": new Sprite(8, 8, 8, 8),
+    "K": new Sprite(16, 8, 8, 8),
+    "L": new Sprite(24, 8, 8, 8),
+    "M": new Sprite(32, 8, 8, 8),
+    "N": new Sprite(40, 8, 8, 8),
+    "O": new Sprite(48, 8, 8, 8),
+    "P": new Sprite(56, 8, 8, 8),
+    "Q": new Sprite(0, 16, 8, 8),
+    "R": new Sprite(8, 16, 8, 8),
+    "S": new Sprite(16, 16, 8, 8),
+    "T": new Sprite(24, 16, 8, 8),
+    "U": new Sprite(32, 16, 8, 8),
+    "V": new Sprite(40, 16, 8, 8),
+    "W": new Sprite(48, 16, 8, 8),
+    "X": new Sprite(56, 16, 8, 8),
+    "Y": new Sprite(0, 24, 8, 8),
+    "Z": new Sprite(8, 24, 8, 8),
+    "1": new Sprite(16, 24, 8, 8),
+    "2": new Sprite(24, 24, 8, 8),
+    "3": new Sprite(32, 24, 8, 8),
+    "4": new Sprite(40, 24, 8, 8),
+    "5": new Sprite(48, 24, 8, 8),
+    "6": new Sprite(56, 24, 8, 8),
+    "7": new Sprite(0, 32, 8, 8),
+    "8": new Sprite(8, 32, 8, 8),
+    "9": new Sprite(16, 32, 8, 8),
+    "0": new Sprite(24, 32, 8, 8),
+    "?": new Sprite(32, 32, 8, 8),
+    "!": new Sprite(40, 32, 8, 8),
+    ":": new Sprite(48, 32, 8, 8),
+    " ": new Sprite(56, 32, 8, 8)
+  };
+  if (typeof xPos !== "number") {
+    if (xPos === "center") xPos = (canvasWidth / 2) - ((string.length * 8) / 2);
+    if (xPos === "left") xPos = 8;
+    if (xPos === "right") xPos = canvasWidth - (8 + (string.length * 8));
+  }
+  console.log(`string length ${string.length * 8}, xPos ${xPos}, center ${canvasWidth / 2}`);
+  string.toUpperCase().split("").forEach((x, i) => {
+    ctx.drawImage(whiteFont, chars[x].x, chars[x].y, chars[x].w, chars[x].h, xPos + (i * 8), yPos, chars[x].w, chars[x].h);
+  });
+}
 //
 //Makes the player's ship
 let playerShip = [new Sprite(0, 5, 32, 27),
                   new Sprite(32, 5, 32, 27),
                   new Sprite(64, 5, 32, 27)];
 
+let playerShipDeath = [new Sprite(0, 101, 32, 27),
+                        new Sprite(32, 101, 32, 27),
+                        new Sprite(64, 101, 32, 27),
+                        new Sprite(96, 101, 32, 27)];
+
 let player = new Player(320, 320, playerShip);
+player.death = playerShipDeath;
 
 player.addCollider(enemies);
 //
@@ -611,7 +660,55 @@ let shotPng = shot1;
 
 let kill = [];
 
-let loopCount = 0;
+let gameLoop;
+//runGameLoop();
+
+function runGameLoop() {
+  let loopCount = 0;
+  gameLoop = setInterval(function() {
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+    keyState.update();
+    player.update(player.x, player.y, loopCount);
+    enemies.forEach((x, i) => x.update(x.x, x.y, i, loopCount));
+
+    if (loopCount % 30 === 0) {
+      if (enemies.length < 5) {
+        makeEnemy("ray");
+      }
+    }
+
+    shots.forEach(function(x) {
+      if (x.y < 0) {
+        shots.shift();
+      } else {
+        x.draw();
+      }
+    });
+
+    if (isShot) {
+
+      ctx.drawImage(blastSheet, shotPng.x, shotPng.y, shotPng.w, shotPng.h, player.x, player.y - 5, shotPng.w, shotPng.h);
+      if (shotPng === shot1) {
+        shotPng = shot2;
+      } else if (shotPng === shot2) {
+        shotPng = shot3
+      } else {
+        isShot = false;
+        shotPng = shot1;
+        let shotX = new Shot();
+        shots.push(shotX);
+      }
+    }
+
+    loopCount++;
+    /*if (loopCount > 10) {
+      clearInterval(gameLoop);
+    }*/
+  }, 40);
+}
+
+/*let loopCount = 0;
 let gameLoop = setInterval(function() {
   ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
@@ -651,5 +748,5 @@ let gameLoop = setInterval(function() {
   loopCount++;
   /*if (loopCount > 10) {
     clearInterval(gameLoop);
-  }*/
-}, 40);
+  }
+}, 40);*/
