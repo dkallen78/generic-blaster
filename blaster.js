@@ -195,7 +195,7 @@ class Player {
     return false;
   }
 
-  update(x, y, i) {
+  update(x, y) {
     //--------------------------------------------------//
     //The actions that need to be taken during each     //
     //  loop of the game loop                           //
@@ -259,13 +259,14 @@ class Enemy extends Player {
     super(originX, originY, sprites);
   }
 
-  update(x, y, i) {
+  update(x, y, i, c) {
     //--------------------------------------------------//
     //The actions that need to be taken during each     //
     //  loop of the game loop                           //
     //integer-> x, y: the position at which to draw the //
     //  ship                                            //
     //integer-> i: enemy's index in the enemy array     //
+    //integer-> c: current frame count                  //
     //--------------------------------------------------//
     //
     //If there is a collision and it's not dead, kill it
@@ -278,6 +279,13 @@ class Enemy extends Player {
     if (this.dead && this.sprite >= this.sprites.length) {
       enemies.splice(i, 1);
     } else {
+      let newX;
+      if (c % 100 >= 50) {
+        newX = -8;
+      } else {
+        newX = 8;
+      }
+      this.move(newX, 0);
       this.draw(x, y);
     }
   }
@@ -471,10 +479,12 @@ let enemyDeath2 = new Sprite(32, 64, 32, 32);
 let enemyDeath3 = new Sprite(64, 64, 32, 32);
 let enemyDeath4 = new Sprite(96, 64, 32, 32);
 
-let enemy = new Enemy(256, 32, [enemy1, enemy2, enemy3, enemy4]);
+let enemy = new Enemy(32, 32, [enemy1, enemy2, enemy3, enemy4]);
 enemy.death = [enemyDeath1, enemyDeath2, enemyDeath3, enemyDeath4];
+let enemyNum2 = new Enemy(600, 32, [enemy1, enemy2, enemy3, enemy4]);
+enemyNum2.death = [enemyDeath1, enemyDeath2, enemyDeath3, enemyDeath4];
 let enemies = [];
-enemies.push(enemy);
+enemies.push(enemy, enemyNum2);
 
 player.addCollider(enemies);
 
@@ -491,6 +501,7 @@ let shotPng = shot1;
 let shots = [];
 
 enemy.addCollider(shots);
+enemyNum2.addCollider(shots);
 
 let kill = [];
 
@@ -502,6 +513,7 @@ let gameLoop = setInterval(function() {
 
   if (loopCount % 2 === 0) {
     enemy.sprite++;
+    enemyNum2.sprite++;
   }
 
   if (loopCount % 2 === 0) {
@@ -509,7 +521,7 @@ let gameLoop = setInterval(function() {
   }
 
   player.update(player.x, player.y);
-  enemies.forEach((x, i) => x.update(x.x, x.y, i));
+  enemies.forEach((x, i) => x.update(x.x, x.y, i, loopCount));
 
   shots.forEach(function(x) {
     if (x.y < 0) {
