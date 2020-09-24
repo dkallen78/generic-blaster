@@ -449,10 +449,15 @@ class KeyState {
     //----------------------------------------------------//
 
     this._left = false;
+    this._leftAction;
     this._right = false;
+    this._rightAction;
     this._up = false;
+    this._upAction;
     this._down = false;
+    this._downAction;
     this._space = false;
+    this._spaceAction;
   }
 
   get left() {
@@ -506,10 +511,31 @@ class KeyState {
     if (this.down) player.move(0, 8);
     if (this.space) isShot = true;
   }
+
+  static gameKeysDown(event) {
+    if (event.code === "ArrowUp") this.up = true;
+    if (event.code === "ArrowDown") this.down = true;
+    if (event.code === "ArrowLeft") this.left = true;
+    if (event.code === "ArrowRight") this.right = true;
+    if (event.code === "Space" ) this.space = true;
+  }
+
 }
 let keyState = new KeyState;
 
-document.onkeydown = function(event) {
+function gameKeysDown(event) {
+  if (event.code === "ArrowUp") keyState.up = true;
+  if (event.code === "ArrowDown") keyState.down = true;
+  if (event.code === "ArrowLeft") keyState.left = true;
+  if (event.code === "ArrowRight") keyState.right = true;
+  if (event.code === "Space" ) keyState.space = true;
+}
+
+//document.onkeydown = gameKeysDown(event);
+
+document.addEventListener("keydown", KeyState.gameKeysDown);
+
+/*document.onkeydown = function(event) {
   //----------------------------------------------------//
   //Listens for a key to be pressed down                //
   //event-> event: the key down event                   //
@@ -521,7 +547,7 @@ document.onkeydown = function(event) {
   if (event.code === "ArrowLeft") keyState.left = true;
   if (event.code === "ArrowRight") keyState.right = true;
   if (event.code === "Space" ) keyState.space = true;
-}
+}*/
 
 document.onkeyup = function(event) {
   //----------------------------------------------------//
@@ -572,9 +598,6 @@ let rayDeath = [new Sprite(0, 64, 32, 32),
                 new Sprite(32, 64, 32, 32),
                 new Sprite(64, 64, 32, 32),
                 new Sprite(96, 64, 32, 32)];
-
-//makeEnemy("ray");
-
 
 let shot1 = new Sprite(0, 0, 32, 5);
 let shot2 = new Sprite(32, 0, 32, 5);
