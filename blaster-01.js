@@ -878,7 +878,7 @@ function runGameLoop() {
   player.death = playerShipDeath;
   player.addCollider(enemies);
 
-  makeEnemy("spinner");
+  //makeEnemy("spinner");
 
   let loopCount = 0;
   gameLoop = setInterval(function() {
@@ -910,7 +910,11 @@ function runGameLoop() {
       if (enemies.length < 5) {
         makeEnemy("ray");
       }
+      if (enemies.length < 7) {
+        makeEnemy("spinner");
+      }
     }
+
 
     shots.forEach(function(x) {
       if (x.y < 0) {
