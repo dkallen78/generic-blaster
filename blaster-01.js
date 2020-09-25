@@ -80,6 +80,7 @@ function write2screen(xPos, yPos, string, size = 1) {
     ":": new Sprite(48, 32, 8, 8),
     " ": new Sprite(56, 32, 8, 8)
   };
+  string = string.toString(10);
   if (typeof xPos !== "number") {
     if (xPos === "center") xPos = (canvasWidth / 2) - ((string.length * size * 8) / 2);
     if (xPos === "left") xPos = size * 8;
@@ -94,7 +95,7 @@ function rectAround(xPos, yPos, string, size) {
   let scale = size * 8;
   if (typeof xPos !== "number") {
     if (xPos === "center") xPos = (canvasWidth / 2) - ((string.length * scale) / 2);
-    if (xPos === "left") xPos = scale * 8;
+    if (xPos === "left") xPos = scale;
     if (xPos === "right") xPos = canvasWidth - (scale + (string.length * scale));
   }
   xPos = xPos - scale;
@@ -114,11 +115,17 @@ function makeEnemy(type) {
       let ray = new Ray(xPos, -32, rayShip);
       ray.addCollider(shots);
       enemies.push(ray);
+      break;
+    case "spinner":
+      let spinner = new Spinner(xPos, -32, spinnerShip);
+      spinner.addCollider(shots);
+      enemies.push(spinner);
+      break;
   }
 }
 
+let score = 0;
 let shots = [];
-
 let enemies = [];
 
 class Sprite {
@@ -159,7 +166,6 @@ class Sprite {
 }
 
 class Player {
-  //----------------------------------------------------//
   //A data structure for holding information and methods//
   //  about the player's ship                           //
   //----------------------------------------------------//
@@ -377,6 +383,8 @@ class Enemy extends Player {
     //  otherwise draw it.
     if (this.dead && this.sprite >= this.sprites.length) {
       enemies.splice(i, 1);
+      score++;
+      console.log(score);
     } else {
       let newX;
       if (c % 100 >= 50) {
@@ -428,6 +436,7 @@ class Ray extends Enemy {
     //  otherwise draw it.
     if (this.dead && this.sprite >= this.sprites.length) {
       enemies.splice(i, 1);
+      score++;
     } else {
       this.count++;
       if (this.count > 40) {
@@ -452,6 +461,81 @@ class Ray extends Enemy {
       && this.x + x > 0) {
         this.x = this.x + x;
     }*/
+    if (this.y > canvasHeight) {
+      this.count = 0;
+      this.y = -32;
+      this.x = rnd(32, 656);
+    } else {
+      this.y = this.y + y;
+    }
+  }
+}
+
+class Spinner extends Enemy {
+  constructor(originX, originY, sprites) {
+    super(originX, originY, sprites);
+    this._death = spinnerDeath;
+    this._count = 0;
+  }
+
+  get count() {
+    return this._count;
+  }
+
+  set count(cnt) {
+    this._count = cnt;
+  }
+
+  update(x, y, i, c) {
+    //--------------------------------------------------//
+    //The actions that need to be taken during each     //
+    //  loop of the game loop                           //
+    //integer-> x, y: the position at which to draw the //
+    //  ship                                            //
+    //integer-> i: enemy's index in the enemy array     //
+    //integer-> c: current frame count                  //
+    //--------------------------------------------------//
+
+    if (c % 2 === 0) {
+      this.sprite++;
+    }
+    //
+    //If there is a collision and it's not dead, kill it
+    if (this.collide(shots) && !this.dead) {
+      this.die();
+    }
+    //
+    //If it's dead and animated, remove it,
+    //  otherwise draw it.
+    if (this.dead && this.sprite >= this.sprites.length) {
+      enemies.splice(i, 1);
+      score++;
+    } else {
+      this.count++;
+      if (this.count > 40) {
+        let moveX = parseInt(15 * Math.cos(((c % 21) * 18) * (Math.PI/180)));
+        this.move(moveX, 5);
+      } else if (this.count < 24){
+
+        this.move(0, 2);
+      }
+
+      this.draw(x, y);
+    }
+  }
+
+  move(x, y) {
+    //--------------------------------------------------//
+    //Updates the ship's position and prevents it from  //
+    //  leaving the bounds of the <canvas>              //
+    //integer-> x, y: How much to change the position   //
+    //  of the ship                                     //
+    //--------------------------------------------------//
+
+    /*if (this.x + x < canvasWidth - 32
+      && this.x + x > 0) {*/
+        this.x = this.x + x;
+    //}*/
     if (this.y > canvasHeight) {
       this.count = 0;
       this.y = -32;
@@ -660,6 +744,15 @@ let rayDeath = [new Sprite(0, 64, 32, 32),
                 new Sprite(64, 64, 32, 32),
                 new Sprite(96, 64, 32, 32)];
 
+let spinnerShip = [new Sprite(0, 128, 32, 32),
+                    new Sprite(32, 128, 32, 32),
+                    new Sprite(64, 128, 32, 32)];
+
+let spinnerDeath = [new Sprite(0, 160, 32, 32),
+                    new Sprite(32, 160, 32, 32),
+                    new Sprite(64, 160, 32, 32),
+                    new Sprite(96, 160, 32, 32)];
+
 let shot1 = new Sprite(0, 0, 32, 5);
 let shot2 = new Sprite(32, 0, 32, 5);
 let shot3 = new Sprite(64, 0, 32, 5);
@@ -674,9 +767,13 @@ let kill = [];
 let keyDown = [];
 let keyUp = [];
 
+
 let gameLoop;
 
 function newGameLoop() {
+
+  enemies = [];
+  shots = [];
   let keyState = new TitleKeys;
 
   function gameKeysDown(event) {
@@ -685,7 +782,7 @@ function newGameLoop() {
     //event-> event: the key down event                   //
     //----------------------------------------------------//
 
-    console.log("pressed");
+    //console.log("pressed");
     //if (event.code === "ArrowUp") keyState.up = true;
     //if (event.code === "ArrowDown") keyState.down = true;
     //if (event.code === "ArrowLeft") keyState.left = true;
@@ -739,6 +836,7 @@ function newGameLoop() {
 
 function runGameLoop() {
   let keyState = new KeyState;
+  score = 0;
 
   function gameKeysDown(event) {
     //----------------------------------------------------//
@@ -780,15 +878,35 @@ function runGameLoop() {
   player.death = playerShipDeath;
   player.addCollider(enemies);
 
+  makeEnemy("spinner");
+
   let loopCount = 0;
   gameLoop = setInterval(function() {
+    //
+    //Clear the screen
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-
+    //
+    //Check key presses
     keyState.update();
+    //
+    //Update player state
     player.update(player.x, player.y, loopCount);
+    //
+    //Update enemy states
     enemies.forEach((x, i) => x.update(x.x, x.y, i, loopCount));
+    //
+    //Update score
+    rectAround(16, 448, `Score: ${score}`, 1);
+    write2screen(16, 448, `Score: ${score}`, 1);
+    //
+    //Flash "Get Ready!" at beginning of round
+    if (loopCount < 50) {
+      if (loopCount % 10 > 5) {
+        write2screen("center", 150, "Get Ready!", 2);
+      }
+    }
 
-    if (loopCount % 30 === 0) {
+    if (loopCount % 30 === 0 && loopCount > 50) {
       if (enemies.length < 5) {
         makeEnemy("ray");
       }
