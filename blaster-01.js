@@ -108,15 +108,23 @@ function rectAround(xPos, yPos, string, size) {
   ctx.lineWidth = "10";
 }
 
+function showScore(score) {
+  score = score.toString(10).padStart(4, "0");
+  rectAround(16, 456, `Score: ${score}`, 1);
+  write2screen(16, 456, `Score: ${score}`, 1);
+}
+
 function makeEnemy(type) {
-  let xPos = rnd(32, 656)
+  let xPos;
   switch(type) {
     case "ray":
+      xPos = rnd(32, 656)
       let ray = new Ray(xPos, -32, rayShip);
       ray.addCollider(shots);
       enemies.push(ray);
       break;
     case "spinner":
+      xPos = rnd(47, 641)
       let spinner = new Spinner(xPos, -32, spinnerShip);
       spinner.addCollider(shots);
       enemies.push(spinner);
@@ -127,6 +135,84 @@ function makeEnemy(type) {
 let score = 0;
 let shots = [];
 let enemies = [];
+
+
+
+
+const AudioContext = window.AudioContext || window. webkitAudioContext;
+
+const audioCtx = new AudioContext();
+
+const audioElement1 = document.getElementById("zap1");
+const audioElement2 = document.getElementById("zap2");
+const audioElement3 = document.getElementById("zap3");
+const audioElement4 = document.getElementById("zap4");
+const audioElement5 = document.getElementById("zap5");
+
+const track1 = audioCtx.createMediaElementSource(audioElement1);
+const track2 = audioCtx.createMediaElementSource(audioElement2);
+const track3 = audioCtx.createMediaElementSource(audioElement3);
+const track4 = audioCtx.createMediaElementSource(audioElement4);
+const track5 = audioCtx.createMediaElementSource(audioElement5);
+
+track1.connect(audioCtx.destination);
+track2.connect(audioCtx.destination);
+track3.connect(audioCtx.destination);
+track4.connect(audioCtx.destination);
+track5.connect(audioCtx.destination);
+
+const audioElem1 = document.getElementById("dead1");
+const audioElem2 = document.getElementById("dead2");
+const audioElem3 = document.getElementById("dead3");
+const audioElem4 = document.getElementById("dead4");
+const audioElem5 = document.getElementById("dead5");
+
+const track11 = audioCtx.createMediaElementSource(audioElem1);
+const track22 = audioCtx.createMediaElementSource(audioElem2);
+const track33 = audioCtx.createMediaElementSource(audioElem3);
+const track44 = audioCtx.createMediaElementSource(audioElem4);
+const track55 = audioCtx.createMediaElementSource(audioElem5);
+
+track11.connect(audioCtx.destination);
+track22.connect(audioCtx.destination);
+track33.connect(audioCtx.destination);
+track44.connect(audioCtx.destination);
+track55.connect(audioCtx.destination);
+
+let deadCount = 0;
+function playDead() {
+  if (deadCount % 5 === 0) {
+    audioElem1.play();
+  } else if (deadCount % 5 === 1) {
+    audioElem2.play();
+  } else if (deadCount % 5 === 2) {
+    audioEleme3.play();
+  } else if (deadCount % 5 === 3) {
+    audioElem4.play();
+  } else {
+    audioElem5.play();
+  }
+  count++;
+}
+
+let count = 0;
+function playSound() {
+  if (count % 5 === 0) {
+    audioElement1.play();
+  } else if (count % 5 === 1) {
+    audioElement2.play();
+  } else if (count % 5 === 2) {
+    audioElement3.play();
+  } else if (count % 5 === 3) {
+    audioElement4.play();
+  } else {
+    audioElement5.play();
+  }
+  count++;
+}
+
+
+
 
 class Sprite {
   //----------------------------------------------------//
@@ -289,7 +375,9 @@ class Player {
             this.y + this.h > this.colliders[i][j].y) {
               //console.log(this.x, self.w, this.y, self.h);
               //console.log(this.colliders[i][j]);
+              playDead();
               return true;
+
             }
       }
     }
@@ -312,7 +400,7 @@ class Player {
       this.die();
     }
     if (this.dead && this.sprite >= this.sprites.length) {
-      newGameLoop();
+      youDead();
     } else {
       this.draw(x, y);
     }
@@ -692,6 +780,36 @@ class TitleKeys extends KeyState {
   }
 }
 
+class DeadKeys extends KeyState {
+  constructor() {
+    super();
+    this._locked = false;
+  }
+
+  get space() {
+    return this._space;
+  }
+
+  set space(state) {
+    this._space = state;
+  }
+
+  get locked() {
+    return this._locked;
+  }
+
+  set locked(state) {
+    this._locked = state;
+  }
+
+  update() {
+    if (!this.locked) {
+      if (this.space) newGameLoop();
+    }
+
+  }
+}
+
 //
 //Making the <canvas> element and placing it in
 //  the body
@@ -766,7 +884,6 @@ let shotPng = shot1;
 let kill = [];
 let keyDown = [];
 let keyUp = [];
-
 
 let gameLoop;
 
@@ -865,7 +982,8 @@ function runGameLoop() {
   }
 
   clearInterval(gameLoop);
-
+  //
+  //Clear the keydown and keyup event listeners
   keyDown.forEach(x => document.removeEventListener("keydown", x));
   document.addEventListener("keydown", gameKeysDown);
   keyDown.push(gameKeysDown);
@@ -873,12 +991,11 @@ function runGameLoop() {
   keyUp.forEach(x => document.removeEventListener("keyup", x));
   document.addEventListener("keyup", gameKeysUp);
   keyUp.push(gameKeysUp);
-
-  player = new Player(320, 320, playerShip);
+  //
+  //Make a new player
+  player = new Player(344, 400, playerShip);
   player.death = playerShipDeath;
   player.addCollider(enemies);
-
-  //makeEnemy("spinner");
 
   let loopCount = 0;
   gameLoop = setInterval(function() {
@@ -896,8 +1013,7 @@ function runGameLoop() {
     enemies.forEach((x, i) => x.update(x.x, x.y, i, loopCount));
     //
     //Update score
-    rectAround(16, 448, `Score: ${score}`, 1);
-    write2screen(16, 448, `Score: ${score}`, 1);
+    showScore(score);
     //
     //Flash "Get Ready!" at beginning of round
     if (loopCount < 50) {
@@ -905,17 +1021,19 @@ function runGameLoop() {
         write2screen("center", 150, "Get Ready!", 2);
       }
     }
-
+    //
+    //Make a new enemy
     if (loopCount % 30 === 0 && loopCount > 50) {
-      if (enemies.length < 5) {
-        makeEnemy("ray");
-      }
       if (enemies.length < 7) {
-        makeEnemy("spinner");
+        if (rnd(1, 100) % 2 === 0) {
+          makeEnemy("ray");
+        } else {
+          makeEnemy("spinner");
+        }
       }
     }
-
-
+    //
+    //Move the shots up the screen
     shots.forEach(function(x) {
       if (x.y < 0) {
         shots.shift();
@@ -923,7 +1041,8 @@ function runGameLoop() {
         x.draw();
       }
     });
-
+    //
+    //Animate the shot blast
     if (isShot) {
 
       ctx.drawImage(blastSheet, shotPng.x, shotPng.y, shotPng.w, shotPng.h, player.x, player.y - 5, shotPng.w, shotPng.h);
@@ -932,58 +1051,93 @@ function runGameLoop() {
       } else if (shotPng === shot2) {
         shotPng = shot3
       } else {
+        playSound();
         isShot = false;
         shotPng = shot1;
         let shotX = new Shot();
         shots.push(shotX);
       }
     }
-
+    //
+    //Keep track of the loops
     loopCount++;
     /*if (loopCount > 10) {
       clearInterval(gameLoop);
     }*/
   }, 40);
 }
-/*let loopCount = 0;
-let gameLoop = setInterval(function() {
-  ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
-  keyState.update();
-  player.update(player.x, player.y, loopCount);
-  enemies.forEach((x, i) => x.update(x.x, x.y, i, loopCount));
+function youDead() {
+  let keyState = new DeadKeys;
+  //keyState.locked = true;
 
-  if (loopCount % 30 === 0) {
-    if (enemies.length < 5) {
-      makeEnemy("ray");
-    }
+  function gameKeysDown(event) {
+    //----------------------------------------------------//
+    //Listens for a key to be pressed down                //
+    //event-> event: the key down event                   //
+    //----------------------------------------------------//
+
+    //console.log("pressed");
+    //if (event.code === "ArrowUp") keyState.up = true;
+    //if (event.code === "ArrowDown") keyState.down = true;
+    //if (event.code === "ArrowLeft") keyState.left = true;
+    //if (event.code === "ArrowRight") keyState.right = true;
+    if (event.code === "Space" ) keyState.space = true;
   }
 
-  shots.forEach(function(x) {
-    if (x.y < 0) {
-      shots.shift();
-    } else {
-      x.draw();
-    }
+  function gameKeysUp(event) {
+    //----------------------------------------------------//
+    //Listens for a key to be released                    //
+    //event-> event: the keyboard event                   //
+    //----------------------------------------------------//
+
+    //if (event.code === "ArrowUp") keyState.up = false;
+    //if (event.code === "ArrowDown") keyState.down = false;
+    //if (event.code === "ArrowLeft") keyState.left = false;
+    //if (event.code === "ArrowRight") keyState.right = false;
+    if (event.code === "Space" ) keyState.space = false;
+  }
+
+  keyDown.forEach(x => {
+    document.removeEventListener("keydown", x);
+    keyDown.shift();
   });
+  document.addEventListener("keydown", gameKeysDown);
+  keyDown.push(gameKeysDown);
 
-  if (isShot) {
+  keyUp.forEach(x => {
+    document.removeEventListener("keyup", x);
+    keyUp.shift();
+  });
+  document.addEventListener("keyup", gameKeysUp);
+  keyUp.push(gameKeysUp);
 
-    ctx.drawImage(blastSheet, shotPng.x, shotPng.y, shotPng.w, shotPng.h, player.x, player.y - 5, shotPng.w, shotPng.h);
-    if (shotPng === shot1) {
-      shotPng = shot2;
-    } else if (shotPng === shot2) {
-      shotPng = shot3
+  clearInterval(gameLoop);
+
+  loopCount = 0;
+  gameLoop = setInterval(function() {
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+    //
+    //Update score
+    showScore(score);
+
+    if (loopCount < 50) {
+      write2screen("center", 150, "You Died!", 2);
     } else {
-      isShot = false;
-      shotPng = shot1;
-      let shotX = new Shot();
-      shots.push(shotX);
+      write2screen("center", 150, "Do you want to play again?", 2);
+      write2screen("center", 198, "press space");
+      keyState.update();
     }
-  }
 
-  loopCount++;
-  /*if (loopCount > 10) {
-    clearInterval(gameLoop);
-  }
-}, 40);*/
+    if (loopCount % 20 > 10 && loopCount > 50) {
+      rectAround("center", 150, "Do you want to play again?", 2);
+    }
+
+
+
+
+    loopCount++;
+  }, 40);
+
+
+}
