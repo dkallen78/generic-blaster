@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>
+      Web Audio API Test
+    </title>
+    <style>
+    </style>
+  </head>
+  <body>
+    <button onclick="playSound()">Play Sound</button>
+    <audio id="zap1" src="zap1.mp3"></audio>
+    <audio id="zap2" src="zap2.mp3"></audio>
+    <audio id="zap3" src="zap3.mp3"></audio>
+
+  </body>
+  <script>
+  function rnd (floor, ceiling) {
+    //----------------------------------------------------//
+    //Gets a random number within a range of numbers      //
+    //integer-> floor: lower bound of the random number   //
+    //integer-> ceiling: upper bound of the random number //
+    //return-> integer: random number between [floor]     //
+    //  and [ceiling]                                     //
+    //----------------------------------------------------//
+
+    let range = (ceiling - floor) + 1;
+    return Math.floor((Math.random() * range) + floor);
+  }
+
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+
+  const audioCtx = new AudioContext();
+
+  const audioElement1 = document.getElementById("zap1");
+  const audioElement2 = document.getElementById("zap2");
+  const audioElement3 = document.getElementById("zap3");
+
+  const track1 = audioCtx.createMediaElementSource(audioElement1);
+  const track2 = audioCtx.createMediaElementSource(audioElement2);
+  const track3 = audioCtx.createMediaElementSource(audioElement3);
+
+  track1.connect(audioCtx.destination);
+  track2.connect(audioCtx.destination);
+  track3.connect(audioCtx.destination);
+
+  function playSound() {
+    let num = rnd(1, 3);
+    if (num === 1) {
+      audioElement1.play();
+    } else if (num === 2) {
+      audioElement2.play();
+    } else {
+      audioElement3.play();
+    }
+
+  }
+
+  </script>
+</html>
