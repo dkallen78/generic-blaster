@@ -110,7 +110,7 @@ function rectAround(xPos, yPos, string, size) {
 
 function showScore(score) {
   score = score.toString(10).padStart(4, "0");
-  rectAround(16, 456, `Score: ${score}`, 1);
+  //rectAround(16, 456, `Score: ${score}`, 1);
   write2screen(16, 456, `Score: ${score}`, 1);
 }
 
@@ -164,7 +164,7 @@ fetch("death3.mp3")
     });
   });
 
-fetch("short_space_loop.mp3")
+fetch("short-space-loop2.mp3")
   .then(function(response) {
     return response.arrayBuffer();
   })
@@ -173,17 +173,6 @@ fetch("short_space_loop.mp3")
       bgm = decodedData;
     });
   });
-
-/*let bgmRequest = new XMLHttpRequest();
-bgmRequest.open("GET", "short_space_loop.mp3", true);
-bgmRequest.responseType = "arraybuffer";
-
-bgmRequest.onload = function() {
-    audioCtx.decodeAudioData(bgmRequest.response, function(theBuffer) {
-      bgm = theBuffer;
-    });
-}
-bgmRequest.send();*/
 
 function playShot(buffer) {
   let source = audioCtx.createBufferSource();
@@ -286,6 +275,7 @@ class Player {
     this._colliders = [];
     this._death = [];
     this._dead = false;
+    this._lives = 3;
   }
 
   set x(change) {
@@ -348,6 +338,14 @@ class Player {
     this._dead = change;
   }
 
+  get lives() {
+    return this._lives;
+  }
+
+  set lives(count) {
+    this._lives = count;
+  }
+
   addCollider(array) {
     //--------------------------------------------------//
     //Adds an array of colliders to the ships collision //
@@ -406,7 +404,17 @@ class Player {
       this.die();
     }
     if (this.dead && this.sprite >= this.sprites.length) {
-      youDead();
+      if (this.lives > 0) {
+        console.log(`count: ${c}, lives ${this.lives}`);
+        clearInterval(gameLoop);
+        this.dead = false;
+        this.sprites = playerShip;
+        this.lives--;
+        bgmSource.stop(0);
+        runGameLoop();
+      } else {
+        youDead();
+      }
     } else {
       this.draw(x, y);
     }
@@ -866,28 +874,25 @@ whiteFont.addEventListener("load", x => {
   newGameLoop();
 })
 
-
 //
 //Makes the player's ship
 let playerShip = [new Sprite(0, 5, 32, 27),
                   new Sprite(32, 5, 32, 27),
                   new Sprite(64, 5, 32, 27)];
-
 let playerShipDeath = [new Sprite(0, 101, 32, 27),
                         new Sprite(32, 101, 32, 27),
                         new Sprite(64, 101, 32, 27),
                         new Sprite(96, 101, 32, 27)];
 
-let player = new Player(320, 320, playerShip);
+/*player = new Player(344, 400, playerShip);
 player.death = playerShipDeath;
-player.addCollider(enemies);
+player.addCollider(enemies);*/
 //
 //Defines the sprites for the ray ship
 let rayShip = [new Sprite(0, 32, 32, 32),
                 new Sprite(32, 32, 32, 32),
                 new Sprite(0, 32, 32, 32),
                 new Sprite(64, 32, 32, 32)];
-
 let rayDeath = [new Sprite(0, 64, 32, 32),
                 new Sprite(32, 64, 32, 32),
                 new Sprite(64, 64, 32, 32),
@@ -896,7 +901,6 @@ let rayDeath = [new Sprite(0, 64, 32, 32),
 let spinnerShip = [new Sprite(0, 128, 32, 32),
                     new Sprite(32, 128, 32, 32),
                     new Sprite(64, 128, 32, 32)];
-
 let spinnerDeath = [new Sprite(0, 160, 32, 32),
                     new Sprite(32, 160, 32, 32),
                     new Sprite(64, 160, 32, 32),
@@ -922,6 +926,7 @@ function newGameLoop() {
 
   enemies = [];
   shots = [];
+  score = 0;
   let keyState = new TitleKeys;
 
   function gameKeysDown(event) {
@@ -965,6 +970,9 @@ function newGameLoop() {
   document.addEventListener("keyup", gameKeysUp);
   keyUp.push(gameKeysUp);
 
+  player = new Player(344, 400, playerShip);
+  player.death = playerShipDeath;
+
   clearInterval(gameLoop);
   let loopCount = 0;
   gameLoop = setInterval(function() {
@@ -984,8 +992,9 @@ function newGameLoop() {
 
 function runGameLoop() {
   let keyState = new KeyState;
-  score = 0;
-
+  enemies = [];
+  shots = [];
+  console.log(player.lives);
   bgmSource = playBGM(bgm);
 
   function gameKeysDown(event) {
@@ -1024,10 +1033,7 @@ function runGameLoop() {
   keyUp.forEach(x => document.removeEventListener("keyup", x));
   document.addEventListener("keyup", gameKeysUp);
   keyUp.push(gameKeysUp);
-  //
-  //Make a new player
-  player = new Player(344, 400, playerShip);
-  player.death = playerShipDeath;
+
   player.addCollider(enemies);
 
   let loopCount = 0;
@@ -1047,6 +1053,10 @@ function runGameLoop() {
     //
     //Update score
     showScore(score);
+    //
+    //Show lives
+    ctx.drawImage(blastSheet, 0, 5, 32, 27, 688, 450, 19, 16);
+    write2screen(672, 456, player.lives);
     //
     //Flash "Get Ready!" at beginning of round
     if (loopCount < 50) {
