@@ -124,7 +124,7 @@ function makeEnemy(type) {
       enemies.push(ray);
       break;
     case "spinner":
-      xPos = rnd(47, 641)
+      xPos = rnd(70, 650)
       let spinner = new Spinner(xPos, -32, spinnerShip);
       spinner.addCollider(shots);
       enemies.push(spinner);
@@ -136,14 +136,14 @@ let score = 0;
 let shots = [];
 let enemies = [];
 
-
+let shotSound, deathSound;
 
 
 const AudioContext = window.AudioContext || window. webkitAudioContext;
 
 const audioCtx = new AudioContext();
 
-const audioElement1 = document.getElementById("zap1");
+/*const audioElement1 = document.getElementById("zap1");
 const audioElement2 = document.getElementById("zap2");
 const audioElement3 = document.getElementById("zap3");
 const audioElement4 = document.getElementById("zap4");
@@ -209,9 +209,43 @@ function playSound() {
     audioElement5.play();
   }
   count++;
+}*/
+
+let shotRequest = new XMLHttpRequest();
+shotRequest.open("GET", "zap4.mp3", true);
+shotRequest.responseType = "arraybuffer";
+
+shotRequest.onload = function() {
+    audioCtx.decodeAudioData(shotRequest.response, function(theBuffer) {
+      shotSound = theBuffer;
+    });
+}
+shotRequest.send();
+
+let deathRequest = new XMLHttpRequest();
+deathRequest.open("GET", "death3.mp3", true);
+deathRequest.responseType = "arraybuffer";
+
+deathRequest.onload = function() {
+    audioCtx.decodeAudioData(deathRequest.response, function(theBuffer) {
+      deathSound = theBuffer;
+    });
+}
+deathRequest.send();
+
+function playShot(buffer) {
+  let source = audioCtx.createBufferSource();
+  source.buffer = buffer;
+  source.connect(audioCtx.destination);
+  source.start(0);
 }
 
-
+function playDead(buffer) {
+  let source = audioCtx.createBufferSource();
+  source.buffer = buffer;
+  source.connect(audioCtx.destination);
+  source.start(0);
+}
 
 
 class Sprite {
@@ -375,7 +409,8 @@ class Player {
             this.y + this.h > this.colliders[i][j].y) {
               //console.log(this.x, self.w, this.y, self.h);
               //console.log(this.colliders[i][j]);
-              playDead();
+              this.colliders[i].splice(j, 1);
+              playDead(deathSound);
               return true;
 
             }
@@ -450,6 +485,15 @@ class Enemy extends Player {
 
   constructor(originX, originY, sprites) {
     super(originX, originY, sprites);
+    this._active = true;
+  }
+
+  get active() {
+    return this._active;
+  }
+
+  set active(state) {
+    this._active = state;
   }
 
   update(x, y, i, c) {
@@ -484,6 +528,13 @@ class Enemy extends Player {
       this.draw(x, y);
     }
   }
+
+  die() {
+    this.dead = true;
+    this.active = false;
+    this.sprites = this.death;
+    this.sprite = 0;
+  }
 }
 
 class Ray extends Enemy {
@@ -516,8 +567,10 @@ class Ray extends Enemy {
     }
     //
     //If there is a collision and it's not dead, kill it
-    if (this.collide(shots) && !this.dead) {
-      this.die();
+    if (!this.dead) {
+      if (this.collide(shots)) {
+        this.die();
+      }
     }
     //
     //If it's dead and animated, remove it,
@@ -589,8 +642,10 @@ class Spinner extends Enemy {
     }
     //
     //If there is a collision and it's not dead, kill it
-    if (this.collide(shots) && !this.dead) {
-      this.die();
+    if (!this.dead) {
+      if (this.collide(shots)) {
+        this.die();
+      }
     }
     //
     //If it's dead and animated, remove it,
@@ -601,7 +656,7 @@ class Spinner extends Enemy {
     } else {
       this.count++;
       if (this.count > 40) {
-        let moveX = parseInt(15 * Math.cos(((c % 21) * 18) * (Math.PI/180)));
+        let moveX = parseInt(15 * Math.cos(((this.count % 21) * 18) * (Math.PI/180)));
         this.move(moveX, 5);
       } else if (this.count < 24){
 
@@ -652,6 +707,7 @@ class Shot {
     this._y = originY;
     this._w = flyingShot.w;
     this._h = flyingShot.h;
+    this._active = true;
   }
 
   set x(change) {
@@ -676,6 +732,10 @@ class Shot {
 
   get h() {
     return this._h;
+  }
+
+  get active() {
+    return this._active;
   }
 
   draw() {
@@ -1051,7 +1111,7 @@ function runGameLoop() {
       } else if (shotPng === shot2) {
         shotPng = shot3
       } else {
-        playSound();
+        playShot(shotSound);
         isShot = false;
         shotPng = shot1;
         let shotX = new Shot();
