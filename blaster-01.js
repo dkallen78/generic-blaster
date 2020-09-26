@@ -144,7 +144,7 @@ const AudioContext = window.AudioContext || window. webkitAudioContext;
 
 const audioCtx = new AudioContext();
 
-fetch("zap4.mp3")
+fetch("audio/zap4.mp3")
   .then(function(response) {
     return response.arrayBuffer();
   })
@@ -154,7 +154,7 @@ fetch("zap4.mp3")
     });
   });
 
-fetch("death3.mp3")
+fetch("audio/death3.mp3")
   .then(function(response) {
     return response.arrayBuffer();
   })
@@ -164,7 +164,7 @@ fetch("death3.mp3")
     });
   });
 
-fetch("short-space-loop2.mp3")
+fetch("audio/short-space-loop2.mp3")
   .then(function(response) {
     return response.arrayBuffer();
   })
@@ -177,6 +177,7 @@ fetch("short-space-loop2.mp3")
 function playShot(buffer) {
   let source = audioCtx.createBufferSource();
   source.buffer = buffer;
+  source.playbackRate.value = .85 + (rnd(-15, 15) / 100);
   source.connect(audioCtx.destination);
   source.start(0);
 }
@@ -409,6 +410,8 @@ class Player {
         clearInterval(gameLoop);
         this.dead = false;
         this.sprites = playerShip;
+        this.x = 344;
+        this.y = 400;
         this.lives--;
         bgmSource.stop(0);
         runGameLoop();
