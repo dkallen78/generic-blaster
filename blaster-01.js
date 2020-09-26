@@ -562,10 +562,10 @@ class Ray extends Enemy {
       score++;
     } else {
       this.count++;
-      if (this.count > 40) {
-        this.move(0, this.count - 44);
-      } else if (this.count < 24){
-        this.move(0, 2);
+      if (this.count > 20) {
+        this.move(0, this.count - 24);
+      } else if (this.count < 12){
+        this.move(0, 4);
       }
 
       this.draw(x, y);
@@ -637,12 +637,11 @@ class Spinner extends Enemy {
       score++;
     } else {
       this.count++;
-      if (this.count > 40) {
+      if (this.count > 20) {
         let moveX = parseInt(15 * Math.cos(((this.count % 21) * 18) * (Math.PI/180)));
         this.move(moveX, 5);
-      } else if (this.count < 24){
-
-        this.move(0, 2);
+      } else if (this.count < 12){
+        this.move(0, 4);
       }
 
       this.draw(x, y);
