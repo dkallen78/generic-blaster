@@ -124,7 +124,7 @@ function makeEnemy(type) {
       enemies.push(ray);
       break;
     case "spinner":
-      xPos = rnd(70, 650)
+      xPos = rnd(32, 610)
       let spinner = new Spinner(xPos, -32, spinnerShip);
       spinner.addCollider(shots);
       enemies.push(spinner);
@@ -136,102 +136,54 @@ let score = 0;
 let shots = [];
 let enemies = [];
 
-let shotSound, deathSound;
+let shotSound, deathSound, bgm;
+let bgmSource
 
 
 const AudioContext = window.AudioContext || window. webkitAudioContext;
 
 const audioCtx = new AudioContext();
 
-/*const audioElement1 = document.getElementById("zap1");
-const audioElement2 = document.getElementById("zap2");
-const audioElement3 = document.getElementById("zap3");
-const audioElement4 = document.getElementById("zap4");
-const audioElement5 = document.getElementById("zap5");
+fetch("zap4.mp3")
+  .then(function(response) {
+    return response.arrayBuffer();
+  })
+  .then(function(buffer) {
+    audioCtx.decodeAudioData(buffer, function(decodedData) {
+      shotSound = decodedData;
+    });
+  });
 
-const track1 = audioCtx.createMediaElementSource(audioElement1);
-const track2 = audioCtx.createMediaElementSource(audioElement2);
-const track3 = audioCtx.createMediaElementSource(audioElement3);
-const track4 = audioCtx.createMediaElementSource(audioElement4);
-const track5 = audioCtx.createMediaElementSource(audioElement5);
+fetch("death3.mp3")
+  .then(function(response) {
+    return response.arrayBuffer();
+  })
+  .then(function(buffer) {
+    audioCtx.decodeAudioData(buffer, function(decodedData) {
+      deathSound = decodedData;
+    });
+  });
 
-track1.connect(audioCtx.destination);
-track2.connect(audioCtx.destination);
-track3.connect(audioCtx.destination);
-track4.connect(audioCtx.destination);
-track5.connect(audioCtx.destination);
+fetch("short_space_loop.mp3")
+  .then(function(response) {
+    return response.arrayBuffer();
+  })
+  .then(function(buffer) {
+    audioCtx.decodeAudioData(buffer, function(decodedData) {
+      bgm = decodedData;
+    });
+  });
 
-const audioElem1 = document.getElementById("dead1");
-const audioElem2 = document.getElementById("dead2");
-const audioElem3 = document.getElementById("dead3");
-const audioElem4 = document.getElementById("dead4");
-const audioElem5 = document.getElementById("dead5");
+/*let bgmRequest = new XMLHttpRequest();
+bgmRequest.open("GET", "short_space_loop.mp3", true);
+bgmRequest.responseType = "arraybuffer";
 
-const track11 = audioCtx.createMediaElementSource(audioElem1);
-const track22 = audioCtx.createMediaElementSource(audioElem2);
-const track33 = audioCtx.createMediaElementSource(audioElem3);
-const track44 = audioCtx.createMediaElementSource(audioElem4);
-const track55 = audioCtx.createMediaElementSource(audioElem5);
-
-track11.connect(audioCtx.destination);
-track22.connect(audioCtx.destination);
-track33.connect(audioCtx.destination);
-track44.connect(audioCtx.destination);
-track55.connect(audioCtx.destination);
-
-let deadCount = 0;
-function playDead() {
-  if (deadCount % 5 === 0) {
-    audioElem1.play();
-  } else if (deadCount % 5 === 1) {
-    audioElem2.play();
-  } else if (deadCount % 5 === 2) {
-    audioEleme3.play();
-  } else if (deadCount % 5 === 3) {
-    audioElem4.play();
-  } else {
-    audioElem5.play();
-  }
-  count++;
-}
-
-let count = 0;
-function playSound() {
-  if (count % 5 === 0) {
-    audioElement1.play();
-  } else if (count % 5 === 1) {
-    audioElement2.play();
-  } else if (count % 5 === 2) {
-    audioElement3.play();
-  } else if (count % 5 === 3) {
-    audioElement4.play();
-  } else {
-    audioElement5.play();
-  }
-  count++;
-}*/
-
-let shotRequest = new XMLHttpRequest();
-shotRequest.open("GET", "zap4.mp3", true);
-shotRequest.responseType = "arraybuffer";
-
-shotRequest.onload = function() {
-    audioCtx.decodeAudioData(shotRequest.response, function(theBuffer) {
-      shotSound = theBuffer;
+bgmRequest.onload = function() {
+    audioCtx.decodeAudioData(bgmRequest.response, function(theBuffer) {
+      bgm = theBuffer;
     });
 }
-shotRequest.send();
-
-let deathRequest = new XMLHttpRequest();
-deathRequest.open("GET", "death3.mp3", true);
-deathRequest.responseType = "arraybuffer";
-
-deathRequest.onload = function() {
-    audioCtx.decodeAudioData(deathRequest.response, function(theBuffer) {
-      deathSound = theBuffer;
-    });
-}
-deathRequest.send();
+bgmRequest.send();*/
 
 function playShot(buffer) {
   let source = audioCtx.createBufferSource();
@@ -247,6 +199,25 @@ function playDead(buffer) {
   source.start(0);
 }
 
+const bgmGain = audioCtx.createGain();
+
+function playBGM(buffer) {
+  let source = audioCtx.createBufferSource();
+  source.buffer = buffer;
+  let vol = 0;
+  bgmGain.gain.value = vol;
+  source.connect(bgmGain).connect(audioCtx.destination);
+  source.loop = true;
+  source.start(0);
+  let fadeIn = setInterval(function() {
+    bgmGain.gain.value = vol;
+    if (vol >= .5) {
+      clearInterval(fadeIn);
+    }
+    vol += .01;
+  }, 40);
+  return source;
+}
 
 class Sprite {
   //----------------------------------------------------//
@@ -1015,6 +986,8 @@ function runGameLoop() {
   let keyState = new KeyState;
   score = 0;
 
+  bgmSource = playBGM(bgm);
+
   function gameKeysDown(event) {
     //----------------------------------------------------//
     //Listens for a key to be pressed down                //
@@ -1130,6 +1103,8 @@ function runGameLoop() {
 function youDead() {
   let keyState = new DeadKeys;
   //keyState.locked = true;
+
+  bgmSource.stop(0);
 
   function gameKeysDown(event) {
     //----------------------------------------------------//
