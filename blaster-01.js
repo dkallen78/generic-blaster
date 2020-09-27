@@ -109,8 +109,8 @@ function rectAround(xPos, yPos, string, size) {
 }
 
 function showScore(score) {
+  ctx.clearRect(16, 456, 176, 16);
   score = score.toString(10).padStart(4, "0");
-  //rectAround(16, 456, `Score: ${score}`, 1);
   write2screen(16, 456, `Score: ${score}`, 1);
 }
 
@@ -132,13 +132,26 @@ function makeEnemy(type) {
   }
 }
 
+function dropBoost(type) {
+  let xPos;
+  switch(type) {
+    case "ammo":
+      xPos = rnd(32, 656)
+      let boost = new AmmoBoost(xPos, -32, ammoBoost);
+      //ammoBoost.addCollider(shots);
+      boosts.push(boost);
+      break;
+  }
+}
+
 let score = 0;
 let shots = [];
+let ammo;
 let enemies = [];
+let boosts = [];
 
-let shotSound, deathSound, bgm;
+let shotSound, deathSound, boostSound, bgm;
 let bgmSource
-
 
 const AudioContext = window.AudioContext || window. webkitAudioContext;
 
@@ -154,7 +167,7 @@ fetch("audio/zap4.mp3")
     });
   });
 
-fetch("audio/death3.mp3")
+fetch("audio/death4.mp3")
   .then(function(response) {
     return response.arrayBuffer();
   })
@@ -171,6 +184,16 @@ fetch("audio/short-space-loop2.mp3")
   .then(function(buffer) {
     audioCtx.decodeAudioData(buffer, function(decodedData) {
       bgm = decodedData;
+    });
+  });
+
+fetch("audio/boost.mp3")
+  .then(function(response) {
+    return response.arrayBuffer();
+  })
+  .then(function(buffer) {
+    audioCtx.decodeAudioData(buffer, function(decodedData) {
+      boostSound = decodedData;
     });
   });
 
@@ -199,6 +222,8 @@ function playBGM(buffer) {
   source.connect(bgmGain).connect(audioCtx.destination);
   source.loop = true;
   source.start(0);
+  //
+  //Gently fade in the sound before game
   let fadeIn = setInterval(function() {
     bgmGain.gain.value = vol;
     if (vol >= .5) {
@@ -247,6 +272,7 @@ class Sprite {
 }
 
 class Player {
+  //----------------------------------------------------//
   //A data structure for holding information and methods//
   //  about the player's ship                           //
   //----------------------------------------------------//
@@ -378,7 +404,7 @@ class Player {
             this.y < this.colliders[i][j].y + this.colliders[i][j].h &&
             this.y + this.h > this.colliders[i][j].y) {
               //console.log(this.x, self.w, this.y, self.h);
-              //console.log(this.colliders[i][j]);
+              console.log(this.colliders[i][j]);
               this.colliders[i].splice(j, 1);
               playDead(deathSound);
               return true;
@@ -449,6 +475,94 @@ class Player {
     if (this.y + y < canvasHeight - 32
       && this.y + y > 0) {
         this.y = this.y + y;
+    }
+  }
+
+  die() {
+    this.dead = true;
+    this.sprites = this.death;
+    this.sprite = 0;
+  }
+}
+
+class AmmoBoost extends Player {
+  constructor(originX, originY, sprites) {
+    super(originX, originY, sprites);
+    this._death = boostUse;
+  }
+
+  collide() {
+    //--------------------------------------------------//
+    //Checks the [this.colliders] array to see if a     //
+    //  collision has occurred                          //
+    //return-> boolean: true for collision              //
+    //--------------------------------------------------//
+
+    let self = this.sprt(0);
+
+    if (this.x < player.x + player.w &&
+        this.x + this.w > player.x &&
+        this.y < player.y + player.h &&
+        this.y + this.h > player.y) {
+          //console.log(this.x, self.w, this.y, self.h);
+          //console.log(this.colliders[i][j]);
+          playDead(deathSound);
+          return true;
+        } else {
+          return false;
+        }
+  }
+
+  update(x, y, i, c) {
+    //--------------------------------------------------//
+    //The actions that need to be taken during each     //
+    //  loop of the game loop                           //
+    //integer-> x, y: the position at which to draw the //
+    //  boost item                                      //
+    //integer-> i: boost's index in the boost array     //
+    //integer-> c: current frame count                  //
+    //--------------------------------------------------//
+
+    if (c % 2 === 0) {
+      this.sprite++;
+    }
+    //
+    //If there is a collision and it's not dead, kill it
+    if (!this.dead) {
+      if (this.collide(shots) && !this.dead) {
+        playShot(boostSound);
+        ammo += 25;
+        this.die();
+      }
+    }
+    /*if (this.collide(shots) && !this.dead) {
+      this.die();
+    }*/
+    //
+    //If it's dead and animated, remove it,
+    //  otherwise draw it.
+    if (this.dead && this.sprite >= this.sprites.length) {
+      boosts.splice(i, 1);
+    } else {
+      this.move(0, 4);
+      this.draw(x, y);
+    }
+  }
+
+  move(x, y) {
+    //--------------------------------------------------//
+    //Updates the ship's position and prevents it from  //
+    //  leaving the bounds of the <canvas>              //
+    //integer-> x, y: How much to change the position   //
+    //  of the ship                                     //
+    //--------------------------------------------------//
+
+    if (this.y > canvasHeight) {
+      this.count = 0;
+      this.y = -32;
+      this.x = rnd(32, 656);
+    } else {
+      this.y = this.y + y;
     }
   }
 
@@ -886,9 +1000,15 @@ let playerShipDeath = [new Sprite(0, 101, 32, 27),
                         new Sprite(64, 101, 32, 27),
                         new Sprite(96, 101, 32, 27)];
 
-/*player = new Player(344, 400, playerShip);
-player.death = playerShipDeath;
-player.addCollider(enemies);*/
+let ammoBoost = [new Sprite(0, 192, 32, 32),
+                  new Sprite(32, 192, 32, 32),
+                  new Sprite(64, 192, 32, 32),
+                  new Sprite(96, 192, 32, 32)];
+let boostUse = [new Sprite(0, 224, 32, 32),
+                new Sprite(32, 224, 32, 32),
+                new Sprite(64, 224, 32, 32),
+                new Sprite(96, 224, 32, 32)];
+
 //
 //Defines the sprites for the ray ship
 let rayShip = [new Sprite(0, 32, 32, 32),
@@ -922,6 +1042,7 @@ let kill = [];
 let keyDown = [];
 let keyUp = [];
 
+
 let gameLoop;
 
 function newGameLoop() {
@@ -929,6 +1050,7 @@ function newGameLoop() {
   enemies = [];
   shots = [];
   score = 0;
+  ammo = 100;
   let keyState = new TitleKeys;
 
   function gameKeysDown(event) {
@@ -996,6 +1118,8 @@ function runGameLoop() {
   let keyState = new KeyState;
   enemies = [];
   shots = [];
+  boosts = [];
+
   console.log(player.lives);
   bgmSource = playBGM(bgm);
 
@@ -1025,6 +1149,26 @@ function runGameLoop() {
     if (event.code === "Space" ) keyState.space = false;
   }
 
+  function showAmmo(ammo) {
+    ctx.clearRect(259, 455, 201, 18);
+    //
+    //Draw the outline of the guage
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(259, 455, 201, 18);
+    //
+    //Blue ammo bar
+    ctx.fillStyle = "blue"
+    let blueBar = ammo >= 100 ? 200 : ammo * 2;
+    ctx.fillRect(260, 456, blueBar, 16);
+    //
+    //Green ammo bar
+    if (ammo > 100) {
+      ctx.fillStyle = "green"
+      ctx.fillRect(260, 456, (ammo - 100) * 2, 16);
+    }
+  }
+
   clearInterval(gameLoop);
   //
   //Clear the keydown and keyup event listeners
@@ -1042,21 +1186,23 @@ function runGameLoop() {
   gameLoop = setInterval(function() {
     //
     //Clear the screen
-    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight - 32);
     //
     //Check key presses
     keyState.update();
     //
     //Update player state
     player.update(player.x, player.y, loopCount);
-    //
-    //Update enemy states
-    enemies.forEach((x, i) => x.update(x.x, x.y, i, loopCount));
+
     //
     //Update score
     showScore(score);
     //
     //Show lives
+    function showLives(lives) {
+      ctx.drawImage(blastSheet, 0, 5, 32, 27, 688, 450, 19, 16);
+      write2screen(672, 456, player.lives);
+    }
     ctx.drawImage(blastSheet, 0, 5, 32, 27, 688, 450, 19, 16);
     write2screen(672, 456, player.lives);
     //
@@ -1078,6 +1224,17 @@ function runGameLoop() {
       }
     }
     //
+    //Update enemy states
+    enemies.forEach((x, i) => x.update(x.x, x.y, i, loopCount));
+    //
+    //Drop a boost
+    if (boosts.length < 1 && ammo < 100 && rnd(0, 100) < 1) {
+      dropBoost("ammo");
+    }
+    //
+    //Update boost state
+    boosts.forEach((x, i) => x.update(x.x, x.y, i, loopCount));
+    //
     //Move the shots up the screen
     shots.forEach(function(x) {
       if (x.y < 0) {
@@ -1088,7 +1245,7 @@ function runGameLoop() {
     });
     //
     //Animate the shot blast
-    if (isShot) {
+    if (isShot && ammo > 0) {
 
       ctx.drawImage(blastSheet, shotPng.x, shotPng.y, shotPng.w, shotPng.h, player.x, player.y - 5, shotPng.w, shotPng.h);
       if (shotPng === shot1) {
@@ -1097,12 +1254,16 @@ function runGameLoop() {
         shotPng = shot3
       } else {
         playShot(shotSound);
+        ammo--
         isShot = false;
         shotPng = shot1;
         let shotX = new Shot();
         shots.push(shotX);
       }
     }
+    //
+    //Draw ammo guage
+    showAmmo(ammo);
     //
     //Keep track of the loops
     loopCount++;
@@ -1171,13 +1332,13 @@ function youDead() {
     if (loopCount < 50) {
       write2screen("center", 150, "You Died!", 2);
     } else {
-      write2screen("center", 150, "Do you want to play again?", 2);
+      write2screen("center", 150, "play again?", 2);
       write2screen("center", 198, "press space");
       keyState.update();
     }
 
     if (loopCount % 20 > 10 && loopCount > 50) {
-      rectAround("center", 150, "Do you want to play again?", 2);
+      rectAround("center", 150, "play again?", 2);
     }
 
 
