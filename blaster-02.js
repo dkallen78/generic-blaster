@@ -527,7 +527,7 @@ class Player extends Ship {
   constructor(x, y) {
     super(x, y);
     this.w = 32;
-    this.h = 27;
+    this.h = 32;
     this.lives = 3;
     this.ammo = 100;
     this.sprites = [new Sprite(0, 0, 32, 32),
@@ -547,31 +547,49 @@ class Player extends Ship {
     this.currentAnimation = this.sprites;
   }
 
+  get lastSprite() {
+    //--------------------------------------------------//
+    //return-> boolean: whether or not the current      //
+    //  sprite is the last one it its animation cycle   //
+    //--------------------------------------------------//
+
+    return (this.sprite % this.currentAnimation.length === this.currentAnimation.length - 1);
+  }
+
   update(c) {
     //--------------------------------------------------//
     //The actions that need to be taken during each     //
     //  loop of the game loop                           //
+    //--------------------------------------------------//
     //integer-> x, y: the position at which to draw the //
     //  object                                          //
     //--------------------------------------------------//
-
+    //
+    //Update the sprite every other frame
     if (c % 2 === 0) {
-      if (this.currentAnimation !== this.sprites &&
-          this.sprite % this.currentAnimation.length === this.currentAnimation.length - 1) {
-            this.currentAnimation = this.sprites;
-            if (this.queuedAction !== null) {
-              this.queuedAction();
-              this.queuedAction = null;
-            }
-          }
+      //
+      //If the special animation cycle is over, revert
+      //  to the default animation
+      if (this.currentAnimation !== this.sprites && this.lastSprite) {
+        this.currentAnimation = this.sprites;
+        //
+        //If there are any queued actions to take, execute them
+        if (this.queuedAction !== null) {
+          this.queuedAction();
+          this.queuedAction = null;
+        }
+      }
       this.sprite++;
     }
-
-    if (this.collide()) {
+    //
+    //If the player is not dead, check for collisions
+    if (this.collide() && !this.dead) {
       this.die();
     }
-
-    this.draw(this.x, this.y);
+    //If the player is not dead, draw the sprite
+    if (!this.dead) {
+      this.draw(this.x, this.y);
+    }
   }
 
   move(x, y) {
@@ -583,13 +601,13 @@ class Player extends Ship {
     //  of the ship                                     //
     //--------------------------------------------------//
 
-    if (this.x + x < canvasWidth - 32
-      && this.x + x > 0) {
-        this.x = this.x + x;
+    if (this.x + x < canvasWidth - 32 &&
+        this.x + x > 0) {
+          this.x = this.x + x;
     }
-    if (this.y + y < canvasHeight - 64
-      && this.y + y > 0) {
-        this.y = this.y + y;
+    if (this.y + y < canvasHeight - 64 &&
+        this.y + y > 0) {
+          this.y = this.y + y;
     }
   }
 
@@ -606,21 +624,37 @@ class Player extends Ship {
   }
 
   die() {
-    this.dead = true;
+    //--------------------------------------------------//
+    //What to do when the player dies                   //
+    //--------------------------------------------------//
+    //
+    //Change the animation
     this.currentAnimation = this.death;
     this.sprite = 0;
+    //
+    //Run after the death animation
     this.queuedAction = function() {
+      this.dead = true;
       endLoop = true;
       showLives(--this.lives);
+      //
+      //Clears the screen of any shots or enemies
       for (let i = enemies.length - 1; i >= 0; i--) {
         enemies.pop();
       }
+      for (let i = shots.length - 1; i >= 0; i--) {
+        shots.pop();
+      }
+      //
+      //If there are lives remaining, reposition the player
+      //  and restart the gameLoop
+      //  Otherwise, stop the bgm and go to the gameOverLoop
       if (this.lives >= 0) {
         this.x = 346;
         this.y = 416;
         setTimeout(function() {
           gameInit();
-        }, 100);
+        }, 500);
       } else {
         bgmSource.stop(0);
         setTimeout(function() {
@@ -851,8 +885,6 @@ class KeyState {
 document.addEventListener("keydown", KeyState.gameKeysDown);
 document.addEventListener("keyup", KeyState.gameKeysUp);
 
-//let player = new Player(346, 416);
-
 function initLoop(tFrame) {
   if (preload === 6) {
     cancelAnimationFrame(activeLoop);
@@ -915,6 +947,7 @@ function gameInit() {
 
   endLoop = false;
   loopCount = 0;
+  player.dead = false;
 
   activeLoop = requestAnimationFrame(gameLoop);
 }
@@ -933,10 +966,15 @@ function gameLoop(tFrame) {
     if (loopCount % 30 > 15) {
       write2screen(ctx, "center", 226, "Get Ready!", 2);
     }
+    if (loopCount % 4 > 2) {
+      player.update(loopCount);
+    }
+  } else {
+    player.update(loopCount);
   }
 
   keyState.update();
-  player.update(loopCount);
+  //player.update(loopCount);
   shots.forEach(x => {
     if (x.y < 0) {
       shots.shift();
