@@ -14,7 +14,7 @@ let preload = 0;
 let audioCtx;
 //
 //Holds the sfx audio buffers
-let shotSound, deathSound, boostSound;
+let shotSound, deathSound, ammoUp;
 //
 //Background Music buffers
 let bgm1, bgmGain, bgmSource
@@ -74,13 +74,13 @@ function init() {
         });
       });
 
-    fetch("audio/boost.mp3")
+    fetch("audio/ammoUp.mp3")
       .then(function(response) {
         return response.arrayBuffer();
       })
       .then(function(buffer) {
         audioCtx.decodeAudioData(buffer, function(decodedData) {
-          boostSound = decodedData;
+          ammoUp = decodedData;
           preload++;
         });
       });
@@ -286,7 +286,12 @@ function playBGM(buffer) {
 function showScore(score) {
   statCtx.clearRect(8, 12, 96, 8);
   if (score % 25 === 0 && score > 0) {
+    playSfx(ammoUp);
     player.ammo += 50;
+    showAmmo(player.ammo);
+  }
+  if (score % 150 === 0 && score > 0) {
+    showLives(++player.lives);
   }
   score = score.toString(10).padStart(4, "0");
   write2screen(statCtx, "left", 12, `Bounty: ${score}`);
@@ -301,7 +306,7 @@ function showAmmo(ammo) {
   statCtx.strokeRect(259, 7, 201, 18);
   //
   //Blue ammo bar
-  statCtx.fillStyle = "blue"
+  statCtx.fillStyle = ammo < 25 ? "red" : "blue";
   let blueBar = ammo >= 100 ? 200 : ammo * 2;
   statCtx.fillRect(260, 8, blueBar, 16);
   //
@@ -466,8 +471,19 @@ class Ship {
     //--------------------------------------------------//
     //integer-> h, w: height and width of the object    //
     //  in pixels                                       //
+    //integer-> count: used internally when ships need  //
+    //  to count frames                                 //
+    //boolean-> dead: whether or not the ship is dead   //
+    //array(Sprite)-> sprites: sprites for the default  //
+    //  animation of the ship                           //
+    //array(Sprite)-> death: sprites for the death      //
+    //  animation of the ship                           //
     //integer-> sprite: index of the current sprite in  //
     //  the animation                                   //
+    //array(array)-> colliders: objects to test for     //
+    //  collisions                                      //
+    //function-> queuedAction: action to take at the end//
+    //  of a non-default animation cycle (eg, death)    //
     //--------------------------------------------------//
 
     this.x = x;
@@ -496,7 +512,6 @@ class Ship {
     //return-> boolean: true for collision              //
     //--------------------------------------------------//
 
-    //let self = this.sprt(0);
     //console.log(this.x, this.y, this.w, this.h);
     for (let i = 0; i < this.colliders.length; i++) {
       for (let j = 0; j < this.colliders[i].length; j++) {
@@ -578,6 +593,35 @@ class Player extends Ship {
     //--------------------------------------------------//
 
     return (this.sprite % this.currentAnimation.length === this.currentAnimation.length - 1);
+  }
+
+  collide() {
+    //--------------------------------------------------//
+    //Checks the [this.colliders] array to see if a     //
+    //  collision has occurred                          //
+    //--------------------------------------------------//
+    //return-> boolean: true for collision              //
+    //--------------------------------------------------//
+
+    //console.log(this.x, this.y, this.w, this.h);
+    for (let i = 0; i < this.colliders.length; i++) {
+      for (let j = 0; j < this.colliders[i].length; j++) {
+        if (this.x < this.colliders[i][j].x + this.colliders[i][j].w &&
+            this.x + this.w > this.colliders[i][j].x &&
+            this.y < this.colliders[i][j].y + this.colliders[i][j].h &&
+            this.y + this.h > this.colliders[i][j].y) {
+              //console.log(this.x, this.w, this.y, this.h);
+              //console.log(this.colliders[i][j]);
+              if (this.colliders[i] === enemies) {
+                showScore(++score);
+              }
+              this.colliders[i].splice(j, 1);
+              playSfx(deathSound);
+              return true;
+            }
+      }
+    }
+    return false;
   }
 
   update(c) {
