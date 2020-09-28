@@ -38,7 +38,7 @@ let activeLoop, loopCount, endLoop = false;
 let shots = [], enemies = [];
 //
 //Game variables
-let score;
+let player, score;
 
 function init() {
   //----------------------------------------------------//
@@ -312,7 +312,7 @@ function showAmmo(ammo) {
 
 function showLives(lives) {
   statCtx.clearRect(672, 8, 704, 16);
-
+  lives = lives < 0 ? 0 : lives;
   statCtx.drawImage(spriteSheet, 0, 0, 32, 32, 688, 8, 16, 16);
   write2screen(statCtx, 672, 12, lives);
 }
@@ -544,7 +544,7 @@ class Player extends Ship {
                   new Sprite(96, 192, 32, 32),
                   new Sprite(128, 192, 32, 32)];
     this.colliders = [enemies];
-
+    this.currentAnimation = this.sprites;
   }
 
   update(c) {
@@ -563,13 +563,11 @@ class Player extends Ship {
               this.queuedAction();
               this.queuedAction = null;
             }
-            //this.queuedAction();
-            //this.queuedAction = null;
           }
       this.sprite++;
     }
 
-    if (this.collide() /*&& !this.dead*/) {
+    if (this.collide()) {
       this.die();
     }
 
@@ -614,13 +612,19 @@ class Player extends Ship {
     this.queuedAction = function() {
       endLoop = true;
       showLives(--this.lives);
-      if (this.lives > 0) {
+      for (let i = enemies.length - 1; i >= 0; i--) {
+        enemies.pop();
+      }
+      if (this.lives >= 0) {
         this.x = 346;
-        for (let i = enemies.length - 1; i >= 0; i--) {
-          enemies.pop();
-        }
+        this.y = 416;
         setTimeout(function() {
           gameInit();
+        }, 100);
+      } else {
+        bgmSource.stop(0);
+        setTimeout(function() {
+          gameOverInit();
         }, 100);
       }
     }
@@ -815,18 +819,18 @@ class KeyState {
   }
 
   static gameKeysDown(event) {
-    //----------------------------------------------------//
-    //Listens for a key to be pressed down                //
-    //----------------------------------------------------//
-    //event-> event: the key down event                   //
-    //----------------------------------------------------//
+    //--------------------------------------------------//
+    //Listens for a key to be pressed down              //
+    //--------------------------------------------------//
+    //event-> event: the key down event                 //
+    //--------------------------------------------------//
 
     //console.log(event.code);
-    if (event.code === "ArrowUp") keyState.up = true;
-    if (event.code === "ArrowDown") keyState.down = true;
-    if (event.code === "ArrowLeft") keyState.left = true;
-    if (event.code === "ArrowRight") keyState.right = true;
-    if (event.code === "Space" ) keyState.space = true;
+    if (event.code === "ArrowUp" && keyState.doUp) keyState.up = true;
+    if (event.code === "ArrowDown" && keyState.doDown) keyState.down = true;
+    if (event.code === "ArrowLeft" && keyState.doLeft) keyState.left = true;
+    if (event.code === "ArrowRight" && keyState.doRight) keyState.right = true;
+    if (event.code === "Space" && keyState.doSpace) keyState.space = true;
   }
 
   static gameKeysUp(event) {
@@ -847,7 +851,7 @@ class KeyState {
 document.addEventListener("keydown", KeyState.gameKeysDown);
 document.addEventListener("keyup", KeyState.gameKeysUp);
 
-let player = new Player(346, 416);
+//let player = new Player(346, 416);
 
 function initLoop(tFrame) {
   if (preload === 6) {
@@ -860,6 +864,9 @@ function initLoop(tFrame) {
 }
 
 function newGameInit() {
+  //ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+  player = new Player(346, 416);
+  endLoop = false;
   loopCount = 0;
   keyState = new KeyState;
   keyState.doSpace = function() {
@@ -870,7 +877,6 @@ function newGameInit() {
 }
 
 function newGameLoop(tFrame) {
-  //console.log(endLoop);
   if (endLoop) {
     cancelAnimationFrame(activeLoop);
     score = 0;
@@ -889,17 +895,19 @@ function newGameLoop(tFrame) {
 }
 
 function gameInit() {
-  console.log("running gameInit");
   //
   //Assign key functions
-  (function() {
-    let rate = 6;
-    keyState.doLeft = function() {player.move(-rate, 0)}
-    keyState.doRight = function() {player.move(rate, 0)}
-    keyState.doUp = function() {player.move(0, -rate)}
-    keyState.doDown = function() {player.move(0, rate)}
-    keyState.doSpace = function() {player.shoot()}
-  })();
+  keyState = new KeyState;
+  setTimeout(function() {
+    (function() {
+      let rate = 6;
+      keyState.doLeft = function() {player.move(-rate, 0)}
+      keyState.doRight = function() {player.move(rate, 0)}
+      keyState.doUp = function() {player.move(0, -rate)}
+      keyState.doDown = function() {player.move(0, rate)}
+      keyState.doSpace = function() {player.shoot()}
+    })();
+  }, 100);
 
   showScore(score);
   showAmmo(player.ammo);
@@ -912,11 +920,12 @@ function gameInit() {
 }
 
 function gameLoop(tFrame) {
+  ctx.clearRect(0, 0, canvasWidth, canvasHeight);
   if (endLoop) {
     cancelAnimationFrame(activeLoop);
   } else {
     requestAnimationFrame(gameLoop);
-    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+    //ctx.clearRect(0, 0, canvasWidth, canvasHeight);
   }
   //
   //Warm-up/Intro
@@ -948,5 +957,35 @@ function gameLoop(tFrame) {
   enemies.forEach((x, i) => x.update(x.x, x.y, i, loopCount));
 
   //console.log(tFrame);
+  loopCount++;
+}
+
+function gameOverInit() {
+  endLoop = false;
+  loopCount = 0;
+  keyState = new KeyState;
+  keyState.doSpace = function() {
+    endLoop = true;
+  }
+
+  activeLoop = requestAnimationFrame(gameOverLoop);
+}
+
+function gameOverLoop(tFrame) {
+  if (endLoop) {
+    cancelAnimationFrame(activeLoop);
+    statCtx.clearRect(0, 0, 720, 32);
+    setTimeout(function() {
+      newGameInit();
+    }, 100);
+  } else {
+    requestAnimationFrame(gameOverLoop);
+  }
+  ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+  if (loopCount % 60 > 30) {
+    write2screen(ctx, "center", 220, "Play Again?", 2);
+  }
+  write2screen(ctx, "center", 240, "Press Space");
+  keyState.update();
   loopCount++;
 }
