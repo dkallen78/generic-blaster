@@ -2,6 +2,7 @@ window.onload = function() {
   init();
   activeLoop = requestAnimationFrame(initLoop);
 }
+
 //------------------------------------------------------//
 //Global Variable Club: Cool kids only!                 //
 //------------------------------------------------------//
@@ -19,6 +20,7 @@ let shotSound, deathSound, boostSound;
 let bgm1, bgmGain, bgmSource
 //
 //Game context
+const gameScreen = document.getElementById("screen");
 let ctx;
 const canvasHeight = 480;
 const canvasWidth = 720;
@@ -30,10 +32,13 @@ let spriteSheet, fontSheet;
 let keyState;
 //
 //Game loop
-let activeLoop, loopCount;
+let activeLoop, loopCount, endLoop = false;
 //
 //Arrays of things
-let shots = [], keyDown = [], keyUp = [];
+let shots = [], enemies = [];
+//
+//Game variables
+let score;
 
 function init() {
   //----------------------------------------------------//
@@ -94,8 +99,10 @@ function init() {
   //
   //Load image data (preload 2)
   (function() {
+    //
+    //Make the primary canvas
     let gameCanvas = makeElement("canvas", "gameCanvas");
-    document.body.appendChild(gameCanvas);
+    gameScreen.appendChild(gameCanvas);
     gameCanvas.setAttribute("height", canvasHeight);
     gameCanvas.setAttribute("width", canvasWidth);
     //
@@ -103,15 +110,24 @@ function init() {
     ctx = gameCanvas.getContext("2d");
     ctx.imageSmoothingEnabled = false;
     //
+    //Make the in-game stats canvas
+    let statCanvas = makeElement("canvas", "statCanvas");
+    gameScreen.appendChild(statCanvas);
+    statCanvas.setAttribute("width", canvasWidth);
+    statCanvas.setAttribute("height", 32);
+
+    statCtx = statCanvas.getContext("2d");
+    statCtx.imageSmoothingEnabled = false;
+    //
     //Load the primary sprite sheet
     let blastSheet = new Image();
     blastSheet.src = "spriteSheet.png";
     blastSheet.onload = function() {
       spriteSheet = makeElement("canvas", "spriteSheet");
       spriteSheet.setAttribute("width", 160);
-      spriteSheet.setAttribute("height", 64);
+      spriteSheet.setAttribute("height", 224);
       let spriteSheetCtx = spriteSheet.getContext("2d");
-      spriteSheetCtx.drawImage(blastSheet, 0, 0, 160, 64);
+      spriteSheetCtx.drawImage(blastSheet, 0, 0, 160, 224);
       preload++
     }
     //
@@ -126,6 +142,7 @@ function init() {
       fontSheetCtx.drawImage(whiteFont, 0, 0, 64, 40);
       preload++;
     }
+
   })();
 }
 
@@ -159,7 +176,7 @@ function rnd (floor, ceiling) {
   return Math.floor((Math.random() * range) + floor);
 }
 
-function write2screen(xPos, yPos, string, size = 1) {
+function write2screen(ctx, xPos, yPos, string, size = 1) {
   //----------------------------------------------------//
   //Adds sprite based letters to the screen             //
   //----------------------------------------------------//
@@ -266,6 +283,56 @@ function playBGM(buffer) {
   return source;
 }
 
+function showScore(score) {
+  statCtx.clearRect(8, 12, 88, 8);
+
+  score = score.toString(10).padStart(4, "0");
+  write2screen(statCtx, "left", 12, `Score: ${score}`);
+}
+
+function showAmmo(ammo) {
+  statCtx.clearRect(259, 7, 201, 18);
+  //
+  //Draw the outline of the guage
+  statCtx.strokeStyle = "white";
+  statCtx.lineWidth = 2;
+  statCtx.strokeRect(259, 7, 201, 18);
+  //
+  //Blue ammo bar
+  statCtx.fillStyle = "blue"
+  let blueBar = ammo >= 100 ? 200 : ammo * 2;
+  statCtx.fillRect(260, 8, blueBar, 16);
+  //
+  //Green ammo bar
+  if (ammo > 100) {
+    statCtx.fillStyle = "green"
+    statCtx.fillRect(260, 8, (ammo - 100) * 2, 16);
+  }
+}
+
+function showLives(lives) {
+  statCtx.clearRect(672, 8, 704, 16);
+
+  statCtx.drawImage(spriteSheet, 0, 0, 32, 32, 688, 8, 16, 16);
+  write2screen(statCtx, 672, 12, lives);
+}
+
+function makeEnemy(type) {
+  let xPos;
+  switch(type) {
+    case "ray":
+      xPos = rnd(32, 688)
+      let ray = new Ray(xPos, -32);
+      enemies.push(ray);
+      break;
+    case "ring":
+      xPos = rnd(200, 688)
+      let spinner = new Ring(xPos, -32);
+      enemies.push(spinner);
+      break;
+  }
+}
+
 class Sprite {
   //----------------------------------------------------//
   //A data structure for holding information about      //
@@ -325,6 +392,7 @@ class Shot {
     this.sprite = 0;
     this.sprites = [new Sprite(128, 0, 32, 7),
                     new Sprite(128, 7, 32, 7),
+                    new Sprite(128, 14, 32, 7),
                     new Sprite(128, 14, 32, 7)];
   }
 
@@ -339,7 +407,7 @@ class Shot {
     //--------------------------------------------------//
 
     let img = this.currentSprite(this.sprite);
-    if (this.count < 2) {
+    if (this.count < 3) {
       this.sprite++;
       this.x = x;
       this.y = y - this.h;
@@ -350,7 +418,6 @@ class Shot {
     }
     this.count++;
   }
-
 }
 
 class Ship {
@@ -372,19 +439,47 @@ class Ship {
     this.x = x;
     this.y = y;
     this.w = 32;
-    this.h - 32;
+    this.h = 32;
+    this.count = 0;
+    this.dead = false;
     this.sprites;
+    this.death;
     this.sprite = 0;
+    this.colliders = [];
     this.currentAnimation = this.sprites;
+    this.queuedAction = null;
   }
 
   currentSprite(num) {
     return this.currentAnimation[num % this.currentAnimation.length];
   }
 
-  /*get sprite() {
-    return this.sprite % this.currentAnimation.length;
-  }*/
+  collide() {
+    //--------------------------------------------------//
+    //Checks the [this.colliders] array to see if a     //
+    //  collision has occurred                          //
+    //--------------------------------------------------//
+    //return-> boolean: true for collision              //
+    //--------------------------------------------------//
+
+    //let self = this.sprt(0);
+    //console.log(this.x, this.y, this.w, this.h);
+    for (let i = 0; i < this.colliders.length; i++) {
+      for (let j = 0; j < this.colliders[i].length; j++) {
+        if (this.x < this.colliders[i][j].x + this.colliders[i][j].w &&
+            this.x + this.w > this.colliders[i][j].x &&
+            this.y < this.colliders[i][j].y + this.colliders[i][j].h &&
+            this.y + this.h > this.colliders[i][j].y) {
+              //console.log(this.x, this.w, this.y, this.h);
+              //console.log(this.colliders[i][j]);
+              this.colliders[i].splice(j, 1);
+              playSfx(deathSound);
+              return true;
+            }
+      }
+    }
+    return false;
+  }
 
   update(c) {
     //--------------------------------------------------//
@@ -416,6 +511,12 @@ class Ship {
     ctx.drawImage(spriteSheet, img.x, img.y, img.w, img.h, x, y, img.w, img.h);
   }
 
+  die() {
+    this.dead = true;
+    this.currentAnimation = this.death;
+    this.sprite = 0;
+  }
+
 }
 
 class Player extends Ship {
@@ -427,6 +528,8 @@ class Player extends Ship {
     super(x, y);
     this.w = 32;
     this.h = 27;
+    this.lives = 3;
+    this.ammo = 100;
     this.sprites = [new Sprite(0, 0, 32, 32),
                     new Sprite(32, 0, 32, 32),
                     new Sprite(64, 0, 32, 32),
@@ -435,8 +538,13 @@ class Player extends Ship {
                   new Sprite(32, 32, 32, 32),
                   new Sprite(64, 32, 32, 32),
                   new Sprite(96, 32, 32, 32)];
-    this.currentAnimation = this.sprites;
-    this.queuedAction = null;
+    this.death = [new Sprite(0, 192, 32, 32),
+                  new Sprite(32, 192, 32, 32),
+                  new Sprite(64, 192, 32, 32),
+                  new Sprite(96, 192, 32, 32),
+                  new Sprite(128, 192, 32, 32)];
+    this.colliders = [enemies];
+
   }
 
   update(c) {
@@ -451,12 +559,20 @@ class Player extends Ship {
       if (this.currentAnimation !== this.sprites &&
           this.sprite % this.currentAnimation.length === this.currentAnimation.length - 1) {
             this.currentAnimation = this.sprites;
-            this.queuedAction();
-            this.queuedAction = null;
+            if (this.queuedAction !== null) {
+              this.queuedAction();
+              this.queuedAction = null;
+            }
+            //this.queuedAction();
+            //this.queuedAction = null;
           }
       this.sprite++;
-
     }
+
+    if (this.collide() /*&& !this.dead*/) {
+      this.die();
+    }
+
     this.draw(this.x, this.y);
   }
 
@@ -473,18 +589,192 @@ class Player extends Ship {
       && this.x + x > 0) {
         this.x = this.x + x;
     }
-    if (this.y + y < canvasHeight - 32
+    if (this.y + y < canvasHeight - 64
       && this.y + y > 0) {
         this.y = this.y + y;
     }
   }
 
   shoot() {
-    this.currentAnimation = this.fire;
+    if (this.ammo > 0) {
+      this.currentAnimation = this.fire;
+      this.queuedAction = function() {
+        playSfx(shotSound);
+        let newShot = new Shot();
+        shots.push(newShot);
+        showAmmo(--this.ammo);
+      }
+    } else {}//play empty ammo sound
+  }
+
+  die() {
+    this.dead = true;
+    this.currentAnimation = this.death;
+    this.sprite = 0;
     this.queuedAction = function() {
-      playSfx(shotSound);
-      let newShot = new Shot();
-      shots.push(newShot);
+      endLoop = true;
+      showLives(--this.lives);
+      if (this.lives > 0) {
+        this.x = 346;
+        for (let i = enemies.length - 1; i >= 0; i--) {
+          enemies.pop();
+        }
+        setTimeout(function() {
+          gameInit();
+        }, 100);
+      }
+    }
+  }
+}
+
+class Ray extends Ship {
+  //----------------------------------------------------//
+  //A sub-class for the Ray type enemy ship             //
+  //----------------------------------------------------//
+
+  constructor(x, y) {
+    super(x, y);
+    this.sprites = [new Sprite(0, 64, 32, 32),
+                    new Sprite(32, 64, 32, 32),
+                    new Sprite(0, 64, 32, 32),
+                    new Sprite(64, 64, 32, 32)];
+    this.death = [new Sprite(0, 96, 32, 32),
+                  new Sprite(32, 96, 32, 32),
+                  new Sprite(64, 96, 32, 32),
+                  new Sprite(96, 96, 32, 32)];
+    this.colliders = [shots];
+    this.currentAnimation = this.sprites;
+  }
+
+  update(x, y, i, c) {
+    //--------------------------------------------------//
+    //The actions that need to be taken during each     //
+    //  loop of the game loop                           //
+    //--------------------------------------------------//
+    //integer-> x, y: the position at which to draw the //
+    //  ship                                            //
+    //integer-> i: enemy's index in the enemy array     //
+    //integer-> c: current frame count                  //
+    //--------------------------------------------------//
+
+    if (c % 3 === 0) {
+      this.sprite++;
+    }
+    //
+    //If there is a collision and it's not dead, kill it
+    if (!this.dead) {
+      if (this.collide()) {
+        this.die();
+      }
+    }
+    //
+    //If it's dead and animated, remove it,
+    //  otherwise draw it.
+    if (this.dead && this.sprite >= this.sprites.length) {
+      enemies.splice(i, 1);
+      showScore(++score);
+    } else {
+      this.count++;
+      if (this.count > 20) {
+        this.move(0, Math.floor(this.count / 8) - 4);
+      } else if (this.count < 12){
+        this.move(0, 4);
+      }
+      this.draw(x, y);
+    }
+
+  }
+
+  move(x, y) {
+    //--------------------------------------------------//
+    //Updates the ship's position and prevents it from  //
+    //  leaving the bounds of the <canvas>              //
+    //integer-> x, y: How much to change the position   //
+    //  of the ship                                     //
+    //--------------------------------------------------//
+
+    if (this.y > canvasHeight) {
+      this.count = 0;
+      this.y = -32;
+      this.x = rnd(32, 656);
+    } else {
+      this.y = this.y + y;
+    }
+  }
+}
+
+class Ring extends Ship {
+
+  constructor(x, y) {
+    super(x, y);
+    this.sprites = [new Sprite(0, 128, 32, 32),
+                    new Sprite(32, 128, 32, 32),
+                    new Sprite(64, 128, 32, 32),
+                    new Sprite(96, 128, 32, 32)];
+    this.death = [new Sprite(0, 160, 32, 32),
+                  new Sprite(32, 160, 32, 32),
+                  new Sprite(64, 160, 32, 32),
+                  new Sprite(96, 160, 32, 32)];
+    this.colliders = [shots];
+    this.currentAnimation = this.sprites;
+  }
+
+  update(x, y, i, c) {
+    //--------------------------------------------------//
+    //The actions that need to be taken during each     //
+    //  loop of the game loop                           //
+    //--------------------------------------------------//
+    //integer-> x, y: the position at which to draw the //
+    //  ship                                            //
+    //integer-> i: enemy's index in the enemy array     //
+    //integer-> c: current frame count                  //
+    //--------------------------------------------------//
+
+    if (c % 3 === 0) {
+      this.sprite++;
+    }
+    //
+    //If there is a collision and it's not dead, kill it
+    if (!this.dead) {
+      if (this.collide()) {
+        this.die();
+      }
+    }
+    //
+    //If it's dead and animated, remove it,
+    //  otherwise draw it.
+    if (this.dead && this.sprite >= this.sprites.length) {
+      enemies.splice(i, 1);
+      showScore(++score);
+    } else {
+      this.count++;
+      if (this.count > 20) {
+        let moveX = Math.floor(10 * Math.cos(((this.count % 61) * 6) * (Math.PI/180)));
+        this.move(moveX, 3);
+      } else if (this.count < 12){
+        this.move(0, 4);
+      }
+
+      this.draw(x, y);
+    }
+  }
+
+  move(x, y) {
+    //--------------------------------------------------//
+    //Updates the ship's position and recycles it to the//
+    //  top of the screen if it leaves the screen       //
+    //--------------------------------------------------//
+    //integer-> x, y: How much to change the position   //
+    //  of the ship                                     //
+    //--------------------------------------------------//
+
+    this.x = this.x + x;
+    if (this.y > canvasHeight) {
+      this.count = 0;
+      this.y = -32;
+      this.x = rnd(200, 688);
+    } else {
+      this.y = this.y + y;
     }
   }
 }
@@ -531,7 +821,7 @@ class KeyState {
     //event-> event: the key down event                   //
     //----------------------------------------------------//
 
-    //console.log("press");
+    //console.log(event.code);
     if (event.code === "ArrowUp") keyState.up = true;
     if (event.code === "ArrowDown") keyState.down = true;
     if (event.code === "ArrowLeft") keyState.left = true;
@@ -557,7 +847,7 @@ class KeyState {
 document.addEventListener("keydown", KeyState.gameKeysDown);
 document.addEventListener("keyup", KeyState.gameKeysUp);
 
-let player = new Player(346, 226);
+let player = new Player(346, 416);
 
 function initLoop(tFrame) {
   if (preload === 6) {
@@ -572,28 +862,34 @@ function initLoop(tFrame) {
 function newGameInit() {
   loopCount = 0;
   keyState = new KeyState;
-  keyState.onSpace = function() {gameInit()}
+  keyState.doSpace = function() {
+    endLoop = true;
+  }
 
   activeLoop = requestAnimationFrame(newGameLoop);
 }
 
 function newGameLoop(tFrame) {
-  if (false) {
+  //console.log(endLoop);
+  if (endLoop) {
     cancelAnimationFrame(activeLoop);
+    score = 0;
+    bgmSource = playBGM(bgm1);
     gameInit();
   } else {
     requestAnimationFrame(newGameLoop);
   }
   ctx.clearRect(0, 0, canvasWidth, canvasHeight);
   if (loopCount % 60 > 30) {
-    write2screen("center", 220, "New Game", 2);
+    write2screen(ctx, "center", 220, "New Game", 2);
   }
-  write2screen("center", 240, "Press Space");
+  write2screen(ctx, "center", 240, "Press Space");
+  keyState.update();
   loopCount++;
 }
 
 function gameInit() {
-
+  console.log("running gameInit");
   //
   //Assign key functions
   (function() {
@@ -605,19 +901,31 @@ function gameInit() {
     keyState.doSpace = function() {player.shoot()}
   })();
 
+  showScore(score);
+  showAmmo(player.ammo);
+  showLives(player.lives);
+
+  endLoop = false;
   loopCount = 0;
 
   activeLoop = requestAnimationFrame(gameLoop);
 }
 
 function gameLoop(tFrame) {
-  /*if (tFrame > 1000) {
+  if (endLoop) {
     cancelAnimationFrame(activeLoop);
-  } else {*/
+  } else {
     requestAnimationFrame(gameLoop);
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-  //}
-  //ctx.drawImage(spriteSheet, ship1.x, ship1.y, ship1.w, ship1.h, loopCount * 4 % 720, 240, 32, 27);
+  }
+  //
+  //Warm-up/Intro
+  if (loopCount < 120) {
+    if (loopCount % 30 > 15) {
+      write2screen(ctx, "center", 226, "Get Ready!", 2);
+    }
+  }
+
   keyState.update();
   player.update(loopCount);
   shots.forEach(x => {
@@ -625,8 +933,19 @@ function gameLoop(tFrame) {
       shots.shift();
     } else {
       x.draw(player.x, player.y);
+      //console.log(x.x, x.y, x.w, x.h);
     }
-  })
+  });
+  if (loopCount % 30 === 0 && loopCount > 120) {
+    if (enemies.length < 7) {
+      if (rnd(1, 100) % 2 === 0) {
+        makeEnemy("ray");
+      } else {
+        makeEnemy("ring");
+      }
+    }
+  }
+  enemies.forEach((x, i) => x.update(x.x, x.y, i, loopCount));
 
   //console.log(tFrame);
   loopCount++;
