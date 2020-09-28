@@ -125,9 +125,9 @@ function init() {
     blastSheet.onload = function() {
       spriteSheet = makeElement("canvas", "spriteSheet");
       spriteSheet.setAttribute("width", 160);
-      spriteSheet.setAttribute("height", 224);
+      spriteSheet.setAttribute("height", 288);
       let spriteSheetCtx = spriteSheet.getContext("2d");
-      spriteSheetCtx.drawImage(blastSheet, 0, 0, 160, 224);
+      spriteSheetCtx.drawImage(blastSheet, 0, 0, 160, 288);
       preload++
     }
     //
@@ -284,10 +284,12 @@ function playBGM(buffer) {
 }
 
 function showScore(score) {
-  statCtx.clearRect(8, 12, 88, 8);
-
+  statCtx.clearRect(8, 12, 96, 8);
+  if (score % 25 === 0 && score > 0) {
+    player.ammo += 50;
+  }
   score = score.toString(10).padStart(4, "0");
-  write2screen(statCtx, "left", 12, `Score: ${score}`);
+  write2screen(statCtx, "left", 12, `Bounty: ${score}`);
 }
 
 function showAmmo(ammo) {
@@ -367,6 +369,38 @@ class Sprite {
 
   get w() {
     return this._w;
+  }
+
+  static load(xStart, yStart, xSize, ySize, direction, frames) {
+    //--------------------------------------------------//
+    //Makes an array of Sprites based on the position   //
+    //  of the first element                            //
+    //--------------------------------------------------//
+    //integer-> xStart, yStart: the starting coordinates//
+    //  for the top left corner of the first sprite     //
+    //integer-> xSize, ySize: the size in pixels of the //
+    //  sprites to be loaded                            //
+    //string-> direction: the orientation of the sprites//
+    //  on the sprite sheet                             //
+    //integer-> frames: the number of sprites to be     //
+    //  loaded into the array                           //
+    //--------------------------------------------------//
+    //return-> array: Sprite objects                    //
+    //--------------------------------------------------//
+
+    let array = [];
+    for (let i = 0; i < frames; i++) {
+      array.push(new Sprite(xStart, yStart, xSize, ySize));
+      switch(direction) {
+        case "right":
+          xStart += xSize;
+          break;
+        case "down":
+          yStart += ySize;
+          break;
+      }
+    }
+    return array;
   }
 }
 
@@ -530,19 +564,9 @@ class Player extends Ship {
     this.h = 32;
     this.lives = 3;
     this.ammo = 100;
-    this.sprites = [new Sprite(0, 0, 32, 32),
-                    new Sprite(32, 0, 32, 32),
-                    new Sprite(64, 0, 32, 32),
-                    new Sprite(32, 0, 32, 32)];
-    this.fire = [new Sprite(0, 32, 32, 32),
-                  new Sprite(32, 32, 32, 32),
-                  new Sprite(64, 32, 32, 32),
-                  new Sprite(96, 32, 32, 32)];
-    this.death = [new Sprite(0, 192, 32, 32),
-                  new Sprite(32, 192, 32, 32),
-                  new Sprite(64, 192, 32, 32),
-                  new Sprite(96, 192, 32, 32),
-                  new Sprite(128, 192, 32, 32)];
+    this.sprites = Sprite.load(0, 0, 32, 32, "right", 4);
+    this.fire = Sprite.load(0, 32, 32, 32, "right", 4);
+    this.death = Sprite.load(0, 192, 32, 32, "right", 5);
     this.colliders = [enemies];
     this.currentAnimation = this.sprites;
   }
@@ -665,6 +689,14 @@ class Player extends Ship {
   }
 }
 
+class AmmoBoost extends Ship {
+  constructor(x, y) {
+    super(x, y);
+    this.sprites = Sprite.load(0, 224, 32, 32, "right", 4);
+    this.death = Sprite.load(0, 256, 32, 32, "right", 4);
+  }
+}
+
 class Ray extends Ship {
   //----------------------------------------------------//
   //A sub-class for the Ray type enemy ship             //
@@ -672,14 +704,8 @@ class Ray extends Ship {
 
   constructor(x, y) {
     super(x, y);
-    this.sprites = [new Sprite(0, 64, 32, 32),
-                    new Sprite(32, 64, 32, 32),
-                    new Sprite(0, 64, 32, 32),
-                    new Sprite(64, 64, 32, 32)];
-    this.death = [new Sprite(0, 96, 32, 32),
-                  new Sprite(32, 96, 32, 32),
-                  new Sprite(64, 96, 32, 32),
-                  new Sprite(96, 96, 32, 32)];
+    this.sprites = Sprite.load(0, 64, 32, 32, "right", 4);
+    this.death = Sprite.load(0, 96, 32, 32, "right", 4);
     this.colliders = [shots];
     this.currentAnimation = this.sprites;
   }
@@ -745,14 +771,8 @@ class Ring extends Ship {
 
   constructor(x, y) {
     super(x, y);
-    this.sprites = [new Sprite(0, 128, 32, 32),
-                    new Sprite(32, 128, 32, 32),
-                    new Sprite(64, 128, 32, 32),
-                    new Sprite(96, 128, 32, 32)];
-    this.death = [new Sprite(0, 160, 32, 32),
-                  new Sprite(32, 160, 32, 32),
-                  new Sprite(64, 160, 32, 32),
-                  new Sprite(96, 160, 32, 32)];
+    this.sprites = Sprite.load(0, 128, 32, 32, "right", 4);
+    this.death = Sprite.load(0, 160, 32, 32, "right", 4);
     this.colliders = [shots];
     this.currentAnimation = this.sprites;
   }
@@ -974,7 +994,6 @@ function gameLoop(tFrame) {
   }
 
   keyState.update();
-  //player.update(loopCount);
   shots.forEach(x => {
     if (x.y < 0) {
       shots.shift();
