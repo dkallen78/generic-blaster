@@ -125,9 +125,9 @@ function init() {
     blastSheet.onload = function() {
       spriteSheet = makeElement("canvas", "spriteSheet");
       spriteSheet.setAttribute("width", 160);
-      spriteSheet.setAttribute("height", 288);
+      spriteSheet.setAttribute("height", 352);
       let spriteSheetCtx = spriteSheet.getContext("2d");
-      spriteSheetCtx.drawImage(blastSheet, 0, 0, 160, 288);
+      spriteSheetCtx.drawImage(blastSheet, 0, 0, 160, 352);
       preload++
     }
     //
@@ -982,10 +982,12 @@ function newGameLoop(tFrame) {
     requestAnimationFrame(newGameLoop);
   }
   ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+  ctx.drawImage(spriteSheet, 0, 288, 128, 64, 232, 100, 256, 128);
+
   if (loopCount % 60 > 30) {
-    write2screen(ctx, "center", 220, "New Game", 2);
+    write2screen(ctx, "center", 250, "New Game", 2);
   }
-  write2screen(ctx, "center", 240, "Press Space");
+  write2screen(ctx, "center", 280, "Press Space");
   keyState.update();
   loopCount++;
 }
