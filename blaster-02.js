@@ -1088,7 +1088,7 @@ function gameOverLoop(tFrame) {
   if (loopCount % 60 > 30) {
     write2screen(ctx, "center", 220, "Play Again?", 2);
   }
-  write2screen(ctx, "center", 240, "Press Space");
+  write2screen(ctx, "center", 250, "Press Space");
   keyState.update();
   loopCount++;
 }
