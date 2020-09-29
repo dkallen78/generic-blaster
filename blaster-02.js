@@ -35,7 +35,7 @@ let keyState;
 let activeLoop, loopCount, endLoop = false;
 //
 //Arrays of things
-let shots = [], enemies = [];
+let shots = [], enemies = [], enemyShots = [];
 //
 //Game variables
 let player, score;
@@ -125,9 +125,9 @@ function init() {
     blastSheet.onload = function() {
       spriteSheet = makeElement("canvas", "spriteSheet");
       spriteSheet.setAttribute("width", 160);
-      spriteSheet.setAttribute("height", 352);
+      spriteSheet.setAttribute("height", 448);
       let spriteSheetCtx = spriteSheet.getContext("2d");
-      spriteSheetCtx.drawImage(blastSheet, 0, 0, 160, 352);
+      spriteSheetCtx.drawImage(blastSheet, 0, 0, 160, 448);
       preload++
     }
     //
@@ -328,14 +328,19 @@ function makeEnemy(type) {
   let xPos;
   switch(type) {
     case "ray":
-      xPos = rnd(32, 688)
+      xPos = rnd(32, 688);
       let ray = new Ray(xPos, -32);
       enemies.push(ray);
       break;
     case "ring":
-      xPos = rnd(200, 688)
+      xPos = rnd(200, 688);
       let spinner = new Ring(xPos, -32);
       enemies.push(spinner);
+      break;
+    case "bomber":
+      xPos = rnd(32, 688);
+      let bomber = new Bomber(xPos, -32);
+      enemies.push(bomber);
       break;
   }
 }
@@ -441,7 +446,7 @@ class Shot {
 
   draw(x, y) {
     //--------------------------------------------------//
-    //Draws the sprite, advancing it 16 pixesls for     //
+    //Draws the sprite, advancing it 12 pixesls for     //
     //  each frame                                      //
     //--------------------------------------------------//
 
@@ -455,6 +460,42 @@ class Shot {
       this.y -= 12;
       ctx.drawImage(spriteSheet, img.x, img.y, img.w, img.h, this.x, this.y, this.w, this.h);
     }
+    this.count++;
+  }
+}
+
+class EnemyShot extends Shot {
+
+  constructor(x, y) {
+    super(x, y);
+    this.w = 10;
+    this.h = 11;
+    this.sprites = Sprite.load(128, 21, 10, 11, "right", 2);
+  }
+
+  draw(x, y) {
+    //--------------------------------------------------//
+    //Draws the sprite, advancing it 6 pixesls for     //
+    //  each frame                                      //
+    //--------------------------------------------------//
+
+    if (this.count % 2 === 0) {
+      this.sprite++;
+    }
+
+    let img = this.currentSprite(this.sprite);
+
+    /*if (this.count < 3) {
+      this.sprite++;
+      this.x = x;
+      this.y = y - this.h;
+      ctx.drawImage(spriteSheet, img.x, img.y, img.w, img.h, this.x, this.y, this.w, this.h);
+    } else {
+      this.y += 6;
+      ctx.drawImage(spriteSheet, img.x, img.y, img.w, img.h, this.x, this.y, this.w, this.h);
+    }*/
+    this.y += 6;
+    ctx.drawImage(spriteSheet, img.x, img.y, img.w, img.h, this.x, this.y, this.w, this.h);
     this.count++;
   }
 }
@@ -582,8 +623,9 @@ class Player extends Ship {
     this.sprites = Sprite.load(0, 0, 32, 32, "right", 4);
     this.fire = Sprite.load(0, 32, 32, 32, "right", 4);
     this.death = Sprite.load(0, 192, 32, 32, "right", 5);
-    this.colliders = [enemies];
+    this.colliders = [enemies, enemyShots  ];
     this.currentAnimation = this.sprites;
+    this.shot = false;
   }
 
   get lastSprite() {
@@ -680,7 +722,7 @@ class Player extends Ship {
   }
 
   shoot() {
-    if (this.ammo > 0) {
+    if (this.ammo > 0 && !this.shot) {
       this.currentAnimation = this.fire;
       this.queuedAction = function() {
         playSfx(shotSound);
@@ -699,6 +741,7 @@ class Player extends Ship {
     //Change the animation
     this.currentAnimation = this.death;
     this.sprite = 0;
+    this.shot = true;
     //
     //Run after the death animation
     this.queuedAction = function() {
@@ -712,6 +755,9 @@ class Player extends Ship {
       }
       for (let i = shots.length - 1; i >= 0; i--) {
         shots.pop();
+      }
+      for (let i = enemyShots.length - 1; i >= 0; i--) {
+        enemyShots.pop();
       }
       //
       //If there are lives remaining, reposition the player
@@ -881,6 +927,110 @@ class Ring extends Ship {
   }
 }
 
+class Bomber extends Ship {
+
+  constructor(x, y) {
+    super(x, y);
+    this.sprites = Sprite.load(0, 352, 32, 32, "right", 4);
+    this.fire = Sprite.load(0, 384, 32, 32, "right", 4);
+    this.death = Sprite.load(0, 416, 32, 32, "right", 4);
+    this.colliders = [shots];
+    this.currentAnimation = this.sprites;
+    this.direction = rnd(1, 2) === 1 ? -1 : 1;
+  }
+
+  get lastSprite() {
+    //--------------------------------------------------//
+    //return-> boolean: whether or not the current      //
+    //  sprite is the last one it its animation cycle   //
+    //--------------------------------------------------//
+
+    return (this.sprite % this.currentAnimation.length === this.currentAnimation.length - 1);
+  }
+
+  update(x, y, i, c) {
+    //--------------------------------------------------//
+    //The actions that need to be taken during each     //
+    //  loop of the game loop                           //
+    //--------------------------------------------------//
+    //integer-> x, y: the position at which to draw the //
+    //  ship                                            //
+    //integer-> i: enemy's index in the enemy array     //
+    //integer-> c: current frame count                  //
+    //--------------------------------------------------//
+
+    if (c % 3 === 0) {
+      if (this.currentAnimation !== this.sprites && this.lastSprite) {
+        this.currentAnimation = this.sprites;
+        //
+        //If there are any queued actions to take, execute them
+        if (this.queuedAction !== null) {
+          this.queuedAction();
+          this.queuedAction = null;
+        }
+      }
+      this.sprite++;
+    }
+    //
+    //If there is a collision and it's not dead, kill it
+    if (!this.dead) {
+      if (this.collide()) {
+        this.die();
+      }
+    }
+    //
+    //If it's dead and animated, remove it,
+    //  otherwise draw it.
+    if (this.dead && this.sprite >= this.sprites.length) {
+      enemies.splice(i, 1);
+      showScore(++score);
+    } else {
+      this.count++;
+      if (this.count > 20) {
+        this.move(4, 1);
+        if (this.count % 50 === rnd(0, 49)) {
+          this.shoot();
+        }
+      } else if (this.count < 12){
+        this.move(0, 4);
+      }
+      this.draw(x, y);
+    }
+  }
+
+  move(x, y) {
+    //--------------------------------------------------//
+    //Updates the ship's position and recycles it to the//
+    //  top of the screen if it leaves the screen       //
+    //--------------------------------------------------//
+    //integer-> x, y: How much to change the position   //
+    //  of the ship                                     //
+    //--------------------------------------------------//
+
+    if (this.x + (x * this.direction) < 32 ||
+        this.x + (x * this.direction) > canvasWidth - 32) {
+          this.direction *= -1;
+        }
+    this.x = this.x + (x * this.direction);
+    if (this.y > canvasHeight) {
+      this.count = 0;
+      this.y = -32;
+      this.x = rnd(200, 688);
+    } else {
+      this.y = this.y + y;
+    }
+  }
+
+  shoot() {
+    this.currentAnimation = this.fire;
+    this.queuedAction = function() {
+      //playSfx(shotSound);
+      let newShot = new EnemyShot(this.x + 11, this.y + 32);
+      enemyShots.push(newShot);
+    }
+  }
+}
+
 class KeyState {
   //----------------------------------------------------//
   //A data structure for holding information about      //
@@ -1014,6 +1164,7 @@ function gameInit() {
   endLoop = false;
   loopCount = 0;
   player.dead = false;
+  player.shot = false;
 
   activeLoop = requestAnimationFrame(gameLoop);
 }
@@ -1045,15 +1196,24 @@ function gameLoop(tFrame) {
       shots.shift();
     } else {
       x.draw(player.x, player.y);
-      //console.log(x.x, x.y, x.w, x.h);
+    }
+  });
+  enemyShots.forEach(x => {
+    if (x.y > canvasHeight) {
+      enemyShots.shift();
+    } else {
+      x.draw(x.x, x.y);
     }
   });
   if (loopCount % 30 === 0 && loopCount > 120) {
     if (enemies.length < 7) {
-      if (rnd(1, 100) % 2 === 0) {
+      let rndEnemy = rnd(1, 99);
+      if (rndEnemy % 3 === 0) {
         makeEnemy("ray");
-      } else {
+      } else if (rndEnemy % 3 === 1) {
         makeEnemy("ring");
+      } else {
+        makeEnemy("bomber");
       }
     }
   }
