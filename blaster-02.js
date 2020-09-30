@@ -14,7 +14,7 @@ let preload = 0;
 let audioCtx;
 //
 //Holds the sfx audio buffers
-let shotSound, deathSound, ammoUp;
+let shotSound, deathSound, ammoUp, bomberSound;
 //
 //Background Music buffers
 let bgm1, bgmGain, bgmSource
@@ -43,10 +43,10 @@ let player, score;
 function init() {
   //----------------------------------------------------//
   //loads all of the data for the game                  //
-  //Preload: 6                                          //
+  //Preload: 7                                          //
   //----------------------------------------------------//
   //
-  //Load audio data (preload: 4)
+  //Load audio data (preload: 5)
   (function() {
     const AudioContext = window.AudioContext || window. webkitAudioContext;
 
@@ -63,7 +63,7 @@ function init() {
         });
       });
 
-    fetch("audio/death4.mp3")
+    fetch("audio/death5.mp3")
       .then(function(response) {
         return response.arrayBuffer();
       })
@@ -95,9 +95,20 @@ function init() {
           preload++;
         });
       });
+
+    fetch("audio/bomberSound.mp3")
+      .then(function(response) {
+        return response.arrayBuffer();
+      })
+      .then(function(buffer) {
+        audioCtx.decodeAudioData(buffer, function(decodedData) {
+          bomberSound = decodedData;
+          preload++;
+        });
+      });
   })();
   //
-  //Load image data (preload 2)
+  //Load image data (preload: 2)
   (function() {
     //
     //Make the primary canvas
@@ -987,7 +998,7 @@ class Bomber extends Ship {
     } else {
       this.count++;
       if (this.count > 20) {
-        this.move(4, 1);
+        this.move(2, 1);
         if (this.count % 50 === rnd(0, 49)) {
           this.shoot();
         }
@@ -1024,11 +1035,12 @@ class Bomber extends Ship {
   shoot() {
     this.currentAnimation = this.fire;
     this.queuedAction = function() {
-      //playSfx(shotSound);
+      playSfx(bomberSound);
       let newShot = new EnemyShot(this.x + 11, this.y + 32);
       enemyShots.push(newShot);
     }
   }
+
 }
 
 class KeyState {
@@ -1100,7 +1112,7 @@ document.addEventListener("keydown", KeyState.gameKeysDown);
 document.addEventListener("keyup", KeyState.gameKeysUp);
 
 function initLoop(tFrame) {
-  if (preload === 6) {
+  if (preload === 7) {
     cancelAnimationFrame(activeLoop);
     newGameInit();
   } else {
