@@ -970,7 +970,7 @@ class Bomber extends Ship {
     //integer-> c: current frame count                  //
     //--------------------------------------------------//
 
-    if (c % 3 === 0) {
+    if (c % 4 === 0) {
       if (this.currentAnimation !== this.sprites && this.lastSprite) {
         this.currentAnimation = this.sprites;
         //
@@ -992,14 +992,14 @@ class Bomber extends Ship {
     //
     //If it's dead and animated, remove it,
     //  otherwise draw it.
-    if (this.dead && this.sprite >= this.sprites.length) {
+    if (this.dead && this.sprite >= this.death.length) {
       enemies.splice(i, 1);
       showScore(++score);
     } else {
       this.count++;
       if (this.count > 20) {
         this.move(2, 1);
-        if (this.count % 50 === rnd(0, 49)) {
+        if (this.count % 50 === rnd(0, 49) && !this.dead) {
           this.shoot();
         }
       } else if (this.count < 12){
@@ -1039,6 +1039,13 @@ class Bomber extends Ship {
       let newShot = new EnemyShot(this.x + 11, this.y + 32);
       enemyShots.push(newShot);
     }
+  }
+
+  die() {
+    this.dead = true;
+    this.currentAnimation = this.death;
+    this.sprite = 0;
+    this.queuedAction = null;
   }
 
 }
@@ -1217,6 +1224,7 @@ function gameLoop(tFrame) {
       x.draw(x.x, x.y);
     }
   });
+  //if (loopCount > 120 && enemies.length < 1) makeEnemy("bomber");
   if (loopCount % 30 === 0 && loopCount > 120) {
     if (enemies.length < 7) {
       let rndEnemy = rnd(1, 99);
