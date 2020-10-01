@@ -998,7 +998,7 @@ class Bomber extends Ship {
     } else {
       this.count++;
       if (this.count > 20) {
-        this.move(2, 1);
+        this.move(2, 0);
         if (this.count % 50 === rnd(0, 49) && !this.dead) {
           this.shoot();
         }
