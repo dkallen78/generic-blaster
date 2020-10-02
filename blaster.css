@@ -8,13 +8,15 @@
   margin: auto;
 }
 
-#gameCanvas {
+#gameCanvas, #levelCanvas {
   position: absolute;
-  background-color: black;
   height: 100%;
   width: 100%;
 }
 
+#levelCanvas {
+  background-color: black;
+}
 
 #statCanvas {
   position: absolute;

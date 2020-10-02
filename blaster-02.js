@@ -21,12 +21,12 @@ let bgm1, bgmGain, bgmSource
 //
 //Game context
 const gameScreen = document.getElementById("screen");
-let ctx;
+let ctx, statCtx, levelCtx;
 const canvasHeight = 480;
 const canvasWidth = 720;
 //
 //Sprite sheets
-let spriteSheet, fontSheet;
+let spriteSheet, fontSheet, level1;
 //
 //Keboard state
 let keyState;
@@ -43,7 +43,7 @@ let player, score;
 function init() {
   //----------------------------------------------------//
   //loads all of the data for the game                  //
-  //Preload: 7                                          //
+  //Preload: 8                                          //
   //----------------------------------------------------//
   //
   //Load audio data (preload: 5)
@@ -108,8 +108,17 @@ function init() {
       });
   })();
   //
-  //Load image data (preload: 2)
+  //Load image data (preload: 3)
   (function() {
+    //
+    //Make the level background canvas
+    let levelCanvas = makeElement("canvas", "levelCanvas");
+    gameScreen.appendChild(levelCanvas);
+    levelCanvas.setAttribute("width", canvasWidth);
+    levelCanvas.setAttribute("height", canvasHeight);
+
+    levelCtx = levelCanvas.getContext("2d");
+    levelCtx.imageSmoothingEnabled = false;
     //
     //Make the primary canvas
     let gameCanvas = makeElement("canvas", "gameCanvas");
@@ -129,6 +138,7 @@ function init() {
 
     statCtx = statCanvas.getContext("2d");
     statCtx.imageSmoothingEnabled = false;
+
     //
     //Load the primary sprite sheet
     let blastSheet = new Image();
@@ -151,6 +161,17 @@ function init() {
       fontSheet.setAttribute("height", 40);
       let fontSheetCtx = fontSheet.getContext("2d");
       fontSheetCtx.drawImage(whiteFont, 0, 0, 64, 40);
+      preload++;
+    }
+
+    let backgroundMap1 = new Image();
+    backgroundMap1.src = "map1-1.png";
+    backgroundMap1.onload = function() {
+      level1 = makeElement("canvas", "level1");
+      level1.setAttribute("width", 720);
+      level1.setAttribute("height", 960);
+      let level1Ctx = level1.getContext("2d");
+      level1Ctx.drawImage(backgroundMap1, 0, 0, 720, 960);
       preload++;
     }
 
@@ -634,7 +655,7 @@ class Player extends Ship {
     this.sprites = Sprite.load(0, 0, 32, 32, "right", 4);
     this.fire = Sprite.load(0, 32, 32, 32, "right", 4);
     this.death = Sprite.load(0, 192, 32, 32, "right", 5);
-    this.colliders = [enemies, enemyShots  ];
+    this.colliders = [enemies, enemyShots];
     this.currentAnimation = this.sprites;
     this.shot = false;
   }
@@ -662,13 +683,18 @@ class Player extends Ship {
         if (this.x < this.colliders[i][j].x + this.colliders[i][j].w &&
             this.x + this.w > this.colliders[i][j].x &&
             this.y < this.colliders[i][j].y + this.colliders[i][j].h &&
-            this.y + this.h > this.colliders[i][j].y) {
+            this.y + this.h > this.colliders[i][j].y &&
+            !this.colliders[i][j].dead) {
               //console.log(this.x, this.w, this.y, this.h);
               //console.log(this.colliders[i][j]);
               if (this.colliders[i] === enemies) {
                 showScore(++score);
+                this.colliders[i][j].die();
+              } else {
+                this.colliders[i].splice(j, 1);
               }
-              this.colliders[i].splice(j, 1);
+
+              //this.colliders[i].splice(j, 1);
               playSfx(deathSound);
               return true;
             }
@@ -1119,7 +1145,7 @@ document.addEventListener("keydown", KeyState.gameKeysDown);
 document.addEventListener("keyup", KeyState.gameKeysUp);
 
 function initLoop(tFrame) {
-  if (preload === 7) {
+  if (preload === 8) {
     cancelAnimationFrame(activeLoop);
     newGameInit();
   } else {
@@ -1185,9 +1211,25 @@ function gameInit() {
   player.dead = false;
   player.shot = false;
 
+  //levelCtx.drawImage(level1, 0, 480, 720, 480, 0, 0, 720, 480);
+
   activeLoop = requestAnimationFrame(gameLoop);
 }
 
+function drawBg(y, level) {
+  levelCtx.clearRect(0, 0, 720, 480);
+  y %= 960;
+  if (y > 480) {
+    levelCtx.drawImage(level, 0, 960 - (y - 480), 720, y - 480, 0, 0, 720, y - 480);
+    levelCtx.drawImage(level, 0, 0, 720, 960 - y, 0, y - 480, 720, 960 - y);
+  } else {
+    levelCtx.drawImage(level, 0, 480 - y, 720, 480, 0, 0, 720, 480);
+  }
+}
+
+
+
+let bgPos = 0;
 function gameLoop(tFrame) {
   ctx.clearRect(0, 0, canvasWidth, canvasHeight);
   if (endLoop) {
@@ -1195,6 +1237,11 @@ function gameLoop(tFrame) {
   } else {
     requestAnimationFrame(gameLoop);
     //ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+  }
+
+  if (loopCount % 2 === 0) {
+    bgPos += 3
+    drawBg(bgPos, level1);
   }
   //
   //Warm-up/Intro
