@@ -24,6 +24,8 @@ const gameScreen = document.getElementById("screen");
 let ctx, statCtx, levelCtx;
 const canvasHeight = 480;
 const canvasWidth = 720;
+
+let bgPos = 0;
 //
 //Sprite sheets
 let spriteSheet, fontSheet, level1;
@@ -146,9 +148,9 @@ function init() {
     blastSheet.onload = function() {
       spriteSheet = makeElement("canvas", "spriteSheet");
       spriteSheet.setAttribute("width", 160);
-      spriteSheet.setAttribute("height", 448);
+      spriteSheet.setAttribute("height", 544);
       let spriteSheetCtx = spriteSheet.getContext("2d");
-      spriteSheetCtx.drawImage(blastSheet, 0, 0, 160, 448);
+      spriteSheetCtx.drawImage(blastSheet, 0, 0, 160, 544);
       preload++
     }
     //
@@ -315,6 +317,17 @@ function playBGM(buffer) {
   return source;
 }
 
+function drawBg(y, level) {
+  levelCtx.clearRect(0, 0, 720, 480);
+  y %= 960;
+  if (y > 480) {
+    levelCtx.drawImage(level, 0, 960 - (y - 480), 720, y - 480, 0, 0, 720, y - 480);
+    levelCtx.drawImage(level, 0, 0, 720, 960 - y, 0, y - 480, 720, 960 - y);
+  } else {
+    levelCtx.drawImage(level, 0, 480 - y, 720, 480, 0, 0, 720, 480);
+  }
+}
+
 function showScore(score) {
   statCtx.clearRect(8, 12, 96, 8);
   if (score % 25 === 0 && score > 0) {
@@ -373,6 +386,11 @@ function makeEnemy(type) {
       xPos = rnd(32, 688);
       let bomber = new Bomber(xPos, -32);
       enemies.push(bomber);
+      break;
+    case "crawler":
+      xPos = rnd(32, 688);
+      let crawler = new Crawler(360, -32);
+      enemies.push(crawler);
       break;
   }
 }
@@ -496,7 +514,7 @@ class Shot {
   }
 }
 
-class EnemyShot extends Shot {
+class BomberShot extends Shot {
 
   constructor(x, y) {
     super(x, y);
@@ -517,15 +535,36 @@ class EnemyShot extends Shot {
 
     let img = this.currentSprite(this.sprite);
 
-    /*if (this.count < 3) {
+
+    this.y += 6;
+    ctx.drawImage(spriteSheet, img.x, img.y, img.w, img.h, this.x, this.y, this.w, this.h);
+    this.count++;
+  }
+}
+
+class CrawlerShot extends Shot {
+
+  constructor(x, y, xChange) {
+    super(x, y);
+    this.w = 8;
+    this.h = 8;
+    this.xChange = xChange;
+    this.sprites = Sprite.load(128, 32, 8, 8, "right", 2);
+  }
+
+  draw(x, y) {
+    //--------------------------------------------------//
+    //Draws the sprite, advancing it 6 pixesls for     //
+    //  each frame                                      //
+    //--------------------------------------------------//
+
+    if (this.count % 2 === 0) {
       this.sprite++;
-      this.x = x;
-      this.y = y - this.h;
-      ctx.drawImage(spriteSheet, img.x, img.y, img.w, img.h, this.x, this.y, this.w, this.h);
-    } else {
-      this.y += 6;
-      ctx.drawImage(spriteSheet, img.x, img.y, img.w, img.h, this.x, this.y, this.w, this.h);
-    }*/
+    }
+
+    let img = this.currentSprite(this.sprite);
+
+    this.x += this.xChange;
     this.y += 6;
     ctx.drawImage(spriteSheet, img.x, img.y, img.w, img.h, this.x, this.y, this.w, this.h);
     this.count++;
@@ -575,6 +614,15 @@ class Ship {
 
   currentSprite(num) {
     return this.currentAnimation[num % this.currentAnimation.length];
+  }
+
+  get lastSprite() {
+    //--------------------------------------------------//
+    //return-> boolean: whether or not the current      //
+    //  sprite is the last one it its animation cycle   //
+    //--------------------------------------------------//
+
+    return (this.sprite % this.currentAnimation.length === this.currentAnimation.length - 1);
   }
 
   collide() {
@@ -976,15 +1024,6 @@ class Bomber extends Ship {
     this.direction = rnd(1, 2) === 1 ? -1 : 1;
   }
 
-  get lastSprite() {
-    //--------------------------------------------------//
-    //return-> boolean: whether or not the current      //
-    //  sprite is the last one it its animation cycle   //
-    //--------------------------------------------------//
-
-    return (this.sprite % this.currentAnimation.length === this.currentAnimation.length - 1);
-  }
-
   update(x, y, i, c) {
     //--------------------------------------------------//
     //The actions that need to be taken during each     //
@@ -1052,7 +1091,7 @@ class Bomber extends Ship {
     if (this.y > canvasHeight) {
       this.count = 0;
       this.y = -32;
-      this.x = rnd(200, 688);
+      this.x = rnd(32, 688);
     } else {
       this.y = this.y + y;
     }
@@ -1062,8 +1101,103 @@ class Bomber extends Ship {
     this.currentAnimation = this.fire;
     this.queuedAction = function() {
       playSfx(bomberSound);
-      let newShot = new EnemyShot(this.x + 11, this.y + 32);
+      let newShot = new BomberShot(this.x + 11, this.y + 32);
       enemyShots.push(newShot);
+    }
+  }
+
+  die() {
+    this.dead = true;
+    this.currentAnimation = this.death;
+    this.sprite = 0;
+    this.queuedAction = null;
+  }
+
+}
+
+class Crawler extends Ship {
+
+  constructor(x, y) {
+    super(x, y);
+    this.sprites = Sprite.load(0, 448, 32, 32, "right", 4);
+    this.fire = Sprite.load(0, 480, 32, 32, "right", 4);
+    this.death = Sprite.load(0, 512, 32, 32, "right", 4);
+    this.colliders = [shots];
+    this.currentAnimation = this.sprites;
+    this.xDir = rnd(1, 2) === 1 ? -1 : 1;
+    this.yDir = 1;
+  }
+
+  update(x, y, i, c) {
+    if (c % 4 === 0) {
+      if (this.currentAnimation !== this.sprites && this.lastSprite) {
+        this.currentAnimation = this.sprites;
+        //
+        //If there are any queued actions to take, execute them
+        if (this.queuedAction !== null) {
+          this.queuedAction();
+          this.queuedAction = null;
+        }
+      }
+      this.sprite++;
+    }
+    //
+    //If there is a collision and it's not dead, kill it
+    if (!this.dead) {
+      if (this.collide()) {
+        this.die();
+      }
+    }
+    //
+    //If it's dead and animated, remove it,
+    //  otherwise draw it.
+    if (this.dead && this.sprite >= this.death.length) {
+      enemies.splice(i, 1);
+      showScore(++score);
+    } else {
+      this.count++;
+      if (this.count > 20) {
+        this.move(2, 0);
+        if (this.count % 50 === rnd(0, 49) && !this.dead) {
+          this.shoot();
+        }
+      } else if (this.count < 12){
+        this.move(0, 4);
+      }
+      this.draw(x, y);
+    }
+  }
+
+  move(x, y) {
+    //--------------------------------------------------//
+    //Updates the ship's position and recycles it to the//
+    //  top of the screen if it leaves the screen       //
+    //--------------------------------------------------//
+    //integer-> x, y: How much to change the position   //
+    //  of the ship                                     //
+    //--------------------------------------------------//
+    if (this.x + (x * this.xDir) < 32 ||
+        this.x + (x * this.xDir) > canvasWidth - 32) {
+          this.xDir *= -1;
+        }
+    this.x = this.x + (x * this.xDir);
+    if (this.y > canvasHeight) {
+      this.count = 0;
+      this.y = -32;
+      this.x = rnd(32, 688);
+    } else {
+      this.y = this.y + y;
+    }
+  }
+
+  shoot() {
+    this.currentAnimation = this.fire;
+    this.queuedAction = function() {
+      //playSfx(bomberSound);
+      let newShot1 = new CrawlerShot(this.x, this.y, -2);
+      let newShot2 = new CrawlerShot(this.x, this.y, 0);
+      let newShot3 = new CrawlerShot(this.x, this.y, 2);
+      enemyShots.push(newShot1, newShot2, newShot3);
     }
   }
 
@@ -1211,25 +1345,9 @@ function gameInit() {
   player.dead = false;
   player.shot = false;
 
-  //levelCtx.drawImage(level1, 0, 480, 720, 480, 0, 0, 720, 480);
-
   activeLoop = requestAnimationFrame(gameLoop);
 }
 
-function drawBg(y, level) {
-  levelCtx.clearRect(0, 0, 720, 480);
-  y %= 960;
-  if (y > 480) {
-    levelCtx.drawImage(level, 0, 960 - (y - 480), 720, y - 480, 0, 0, 720, y - 480);
-    levelCtx.drawImage(level, 0, 0, 720, 960 - y, 0, y - 480, 720, 960 - y);
-  } else {
-    levelCtx.drawImage(level, 0, 480 - y, 720, 480, 0, 0, 720, 480);
-  }
-}
-
-
-
-let bgPos = 0;
 function gameLoop(tFrame) {
   ctx.clearRect(0, 0, canvasWidth, canvasHeight);
   if (endLoop) {
@@ -1274,13 +1392,15 @@ function gameLoop(tFrame) {
   //if (loopCount > 120 && enemies.length < 1) makeEnemy("bomber");
   if (loopCount % 30 === 0 && loopCount > 120) {
     if (enemies.length < 7) {
-      let rndEnemy = rnd(1, 99);
-      if (rndEnemy % 3 === 0) {
+      let rndEnemy = rnd(1, 100);
+      if (rndEnemy % 4 === 0) {
         makeEnemy("ray");
-      } else if (rndEnemy % 3 === 1) {
+      } else if (rndEnemy % 4 === 1) {
         makeEnemy("ring");
-      } else {
+      } else if (rndEnemy % 4 === 2) {
         makeEnemy("bomber");
+      } else {
+        makeEnemy("crawler");
       }
     }
   }
