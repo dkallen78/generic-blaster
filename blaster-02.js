@@ -545,7 +545,9 @@ class BomberShot extends Shot {
 class CrawlerShot extends Shot {
 
   constructor(x, y, xChange) {
-    super(x, y);
+    super(x);
+    this.x += 16;
+    this.y = y - 16;
     this.w = 8;
     this.h = 8;
     this.xChange = xChange;
@@ -1157,9 +1159,16 @@ class Crawler extends Ship {
     } else {
       this.count++;
       if (this.count > 20) {
-        this.move(2, 0);
-        if (this.count % 50 === rnd(0, 49) && !this.dead) {
-          this.shoot();
+
+        if (this.count % 120 < 60) {
+          this.move(2, 2);
+        } else if (this.count % 40 === 21) {
+          this.xDir = rnd(-1, 1);
+          this.yDir = rnd(-1, 1);
+        } else {
+          if (this.count % 50 === rnd(0, 49) && !this.dead) {
+            this.shoot();
+          }
         }
       } else if (this.count < 12){
         this.move(0, 4);
@@ -1181,13 +1190,13 @@ class Crawler extends Ship {
           this.xDir *= -1;
         }
     this.x = this.x + (x * this.xDir);
-    if (this.y > canvasHeight) {
-      this.count = 0;
-      this.y = -32;
-      this.x = rnd(32, 688);
-    } else {
-      this.y = this.y + y;
+    if (this.count > 12) {
+      if (this.y + (y * this.yDir) < 8 ||
+          this.y + (y * this.yDir) > 240) {
+            this.yDir *= -1;
+          }
     }
+    this.y = this.y + (y * this.yDir);
   }
 
   shoot() {
@@ -1389,7 +1398,7 @@ function gameLoop(tFrame) {
       x.draw(x.x, x.y);
     }
   });
-  //if (loopCount > 120 && enemies.length < 1) makeEnemy("bomber");
+  //if (loopCount > 120 && enemies.length < 1) makeEnemy("crawler");
   if (loopCount % 30 === 0 && loopCount > 120) {
     if (enemies.length < 7) {
       let rndEnemy = rnd(1, 100);
