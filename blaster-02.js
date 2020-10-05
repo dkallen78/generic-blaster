@@ -21,14 +21,14 @@ let bgm1, bgmGain, bgmSource
 //
 //Game context
 const gameScreen = document.getElementById("screen");
-let ctx, statCtx, levelCtx;
+let ctx, statCtx, levelCtx, levelTopCtx;
 const canvasHeight = 480;
 const canvasWidth = 720;
 
-let bgPos = 0;
+let bgPos1 = 0, bgPos2 = 0;
 //
 //Sprite sheets
-let spriteSheet, fontSheet, level1;
+let spriteSheet, fontSheet, level1, level1Top;
 //
 //Keboard state
 let keyState;
@@ -45,7 +45,7 @@ let player, score;
 function init() {
   //----------------------------------------------------//
   //loads all of the data for the game                  //
-  //Preload: 8                                          //
+  //Preload: 9                                          //
   //----------------------------------------------------//
   //
   //Load audio data (preload: 5)
@@ -110,10 +110,10 @@ function init() {
       });
   })();
   //
-  //Load image data (preload: 3)
+  //Load image data (preload: 4)
   (function() {
     //
-    //Make the level background canvas
+    //Make the level background canvases
     let levelCanvas = makeElement("canvas", "levelCanvas");
     gameScreen.appendChild(levelCanvas);
     levelCanvas.setAttribute("width", canvasWidth);
@@ -121,6 +121,14 @@ function init() {
 
     levelCtx = levelCanvas.getContext("2d");
     levelCtx.imageSmoothingEnabled = false;
+
+    let levelTopCanvas = makeElement("canvas", "levelTopCanvas");
+    gameScreen.appendChild(levelTopCanvas);
+    levelTopCanvas.setAttribute("width", canvasWidth);
+    levelTopCanvas.setAttribute("height", canvasHeight);
+
+    levelTopCtx = levelTopCanvas.getContext("2d");
+    levelTopCtx.imageSmoothingEnabled = false;
     //
     //Make the primary canvas
     let gameCanvas = makeElement("canvas", "gameCanvas");
@@ -167,13 +175,24 @@ function init() {
     }
 
     let backgroundMap1 = new Image();
-    backgroundMap1.src = "map1-1.png";
+    backgroundMap1.src = "map1-2.png";
     backgroundMap1.onload = function() {
       level1 = makeElement("canvas", "level1");
       level1.setAttribute("width", 720);
       level1.setAttribute("height", 960);
       let level1Ctx = level1.getContext("2d");
       level1Ctx.drawImage(backgroundMap1, 0, 0, 720, 960);
+      preload++;
+    }
+
+    let bgMapTop = new Image();
+    bgMapTop.src = "map1-clouds.png";
+    bgMapTop.onload = function() {
+      level1Top = makeElement("canvas", "level1Top");
+      level1Top.setAttribute("width", 720);
+      level1Top.setAttribute("height", 960);
+      let level1TopCtx = level1Top.getContext("2d");
+      level1TopCtx.drawImage(bgMapTop, 0, 0, 720, 960);
       preload++;
     }
 
@@ -317,24 +336,41 @@ function playBGM(buffer) {
   return source;
 }
 
-function drawBg(y, level) {
-  levelCtx.clearRect(0, 0, 720, 480);
+function drawBg(y, level, ctx) {
+  //----------------------------------------------------//
+  //Displays the level background                       //
+  //----------------------------------------------------//
+  //integer-> y: the y position of the background       //
+  //canvas-> level: which level to draw                 //
+  //----------------------------------------------------//
+
+  ctx.clearRect(0, 0, 720, 480);
   y %= 960;
   if (y > 480) {
-    levelCtx.drawImage(level, 0, 960 - (y - 480), 720, y - 480, 0, 0, 720, y - 480);
-    levelCtx.drawImage(level, 0, 0, 720, 960 - y, 0, y - 480, 720, 960 - y);
+    ctx.drawImage(level, 0, 960 - (y - 480), 720, y - 480, 0, 0, 720, y - 480);
+    ctx.drawImage(level, 0, 0, 720, 960 - y, 0, y - 480, 720, 960 - y);
   } else {
-    levelCtx.drawImage(level, 0, 480 - y, 720, 480, 0, 0, 720, 480);
+    ctx.drawImage(level, 0, 480 - y, 720, 480, 0, 0, 720, 480);
   }
 }
 
 function showScore(score) {
+  //----------------------------------------------------//
+  //Shows the player's score                            //
+  //----------------------------------------------------//
+  //integer-> score: score to display                   //
+  //----------------------------------------------------//
+
   statCtx.clearRect(8, 12, 96, 8);
+  //
+  //Every 25 points the player gets an ammo bonus
   if (score % 25 === 0 && score > 0) {
     playSfx(ammoUp);
     player.ammo += 50;
     showAmmo(player.ammo);
   }
+  //
+  //Every 150 points the player gets an extra life
   if (score % 150 === 0 && score > 0) {
     showLives(++player.lives);
   }
@@ -343,6 +379,12 @@ function showScore(score) {
 }
 
 function showAmmo(ammo) {
+  //----------------------------------------------------//
+  //Shows how much ammo the player has                  //
+  //----------------------------------------------------//
+  //integer-> ammo: ammo to display                     //
+  //----------------------------------------------------//
+
   statCtx.clearRect(259, 7, 201, 18);
   //
   //Draw the outline of the guage
@@ -363,6 +405,12 @@ function showAmmo(ammo) {
 }
 
 function showLives(lives) {
+  //----------------------------------------------------//
+  //Shows how many lives the player has left            //
+  //----------------------------------------------------//
+  //integer-> lives: how many lives to display          //
+  //----------------------------------------------------//
+
   statCtx.clearRect(672, 8, 704, 16);
   lives = lives < 0 ? 0 : lives;
   statCtx.drawImage(spriteSheet, 0, 0, 32, 32, 688, 8, 16, 16);
@@ -409,26 +457,10 @@ class Sprite {
     //integer-> w, h: the height and width of the sprite//
     //--------------------------------------------------//
 
-    this._x = x;
-    this._y = y;
-    this._h = h;
-    this._w = w;
-  }
-
-  get x() {
-    return this._x;
-  }
-
-  get y() {
-    return this._y;
-  }
-
-  get h() {
-    return this._h;
-  }
-
-  get w() {
-    return this._w;
+    this.x = x;
+    this.y = y;
+    this.h = h;
+    this.w = w;
   }
 
   static load(xStart, yStart, xSize, ySize, direction, frames) {
@@ -476,6 +508,12 @@ class Shot {
     //  the shot sprite                                 //
     //--------------------------------------------------//
     //integer-> w, h: width and height of the sprite    //
+    //integer-> count: an internal counter used for     //
+    //  animation timing                                //
+    //integer-> sprite: current sprite in the animation //
+    //  cycle                                           //
+    //array(Sprite)-> sprites: the sprites used in the  //
+    //  animation                                       //
     //--------------------------------------------------//
 
     this.x = x;
@@ -491,13 +529,22 @@ class Shot {
   }
 
   currentSprite(num) {
+    //--------------------------------------------------//
+    //Current sprite in the animation cycle             //
+    //--------------------------------------------------//
+    //integer-> num: number of sprite in the animation  //
+    //  array                                           //
+    //--------------------------------------------------//
+
     return this.sprites[num % this.sprites.length];
   }
 
   draw(x, y) {
     //--------------------------------------------------//
-    //Draws the sprite, advancing it 12 pixesls for     //
-    //  each frame                                      //
+    //Draws the sprite on the screen                    //
+    //--------------------------------------------------//
+    //integer-> x, y: top left corner of where to draw  //
+    //  the sprite                                      //
     //--------------------------------------------------//
 
     let img = this.currentSprite(this.sprite);
@@ -515,8 +562,19 @@ class Shot {
 }
 
 class BomberShot extends Shot {
+  //----------------------------------------------------//
+  //A data structure for holding information about      //
+  //  the shots fired by the Bomber enemy               //
+  //----------------------------------------------------//
 
   constructor(x, y) {
+    //--------------------------------------------------//
+    //integer-> x, y: where to first place              //
+    //  the shot sprite                                 //
+    //--------------------------------------------------//
+    //integer-> w, h: width and height of the sprite    //
+    //--------------------------------------------------//
+
     super(x, y);
     this.w = 10;
     this.h = 11;
@@ -1185,6 +1243,7 @@ class Crawler extends Ship {
     //integer-> x, y: How much to change the position   //
     //  of the ship                                     //
     //--------------------------------------------------//
+
     if (this.x + (x * this.xDir) < 32 ||
         this.x + (x * this.xDir) > canvasWidth - 32) {
           this.xDir *= -1;
@@ -1288,7 +1347,7 @@ document.addEventListener("keydown", KeyState.gameKeysDown);
 document.addEventListener("keyup", KeyState.gameKeysUp);
 
 function initLoop(tFrame) {
-  if (preload === 8) {
+  if (preload === 9) {
     cancelAnimationFrame(activeLoop);
     newGameInit();
   } else {
@@ -1367,8 +1426,10 @@ function gameLoop(tFrame) {
   }
 
   if (loopCount % 2 === 0) {
-    bgPos += 3
-    drawBg(bgPos, level1);
+    bgPos1 += 3;
+    drawBg(bgPos1, level1, levelCtx);
+    bgPos2 += 6;
+    drawBg(bgPos2, level1Top, levelTopCtx);
   }
   //
   //Warm-up/Intro

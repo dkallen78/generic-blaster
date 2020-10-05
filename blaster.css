@@ -8,7 +8,7 @@
   margin: auto;
 }
 
-#gameCanvas, #levelCanvas {
+#gameCanvas, #levelCanvas, #levelTopCanvas {
   position: absolute;
   height: 100%;
   width: 100%;
