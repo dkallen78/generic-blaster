@@ -344,7 +344,7 @@ function drawBg(y, level, ctx) {
   //canvas-> level: which level to draw                 //
   //----------------------------------------------------//
 
-  ctx.clearRect(0, 0, 720, 480);
+  ctx .clearRect(0, 0, 720, 480);
   y %= 960;
   if (y > 480) {
     ctx.drawImage(level, 0, 960 - (y - 480), 720, y - 480, 0, 0, 720, y - 480);
@@ -418,6 +418,12 @@ function showLives(lives) {
 }
 
 function makeEnemy(type) {
+  //----------------------------------------------------//
+  //Makes a new enemy and puts them in the enemy array  //
+  //----------------------------------------------------//
+  //string-> type: type of enemy to create              //
+  //----------------------------------------------------//
+
   let xPos;
   switch(type) {
     case "ray":
@@ -573,6 +579,8 @@ class BomberShot extends Shot {
     //  the shot sprite                                 //
     //--------------------------------------------------//
     //integer-> w, h: width and height of the sprite    //
+    //array(Sprite)-> sprites: the array of sprites to  //
+    //  animate the shot                                //
     //--------------------------------------------------//
 
     super(x, y);
@@ -583,8 +591,10 @@ class BomberShot extends Shot {
 
   draw(x, y) {
     //--------------------------------------------------//
-    //Draws the sprite, advancing it 6 pixesls for     //
+    //Draws the sprite, advancing it 6 pixesls for      //
     //  each frame                                      //
+    //--------------------------------------------------//
+    //integer-> x, y: where to draw the shot            //
     //--------------------------------------------------//
 
     if (this.count % 2 === 0) {
@@ -601,8 +611,23 @@ class BomberShot extends Shot {
 }
 
 class CrawlerShot extends Shot {
+  //----------------------------------------------------//
+  //A data structure for holding information about      //
+  //  the shots fired by the Crawler enemy              //
+  //----------------------------------------------------//
 
   constructor(x, y, xChange) {
+    //--------------------------------------------------//
+    //integer-> x, y: where to first place              //
+    //  the shot sprite                                 //
+    //--------------------------------------------------//
+    //integer-> w, h: width and height of the sprite    //
+    //integer-> xChange: how much to change the x       //
+    //  position of the shot each frame                 //
+    //array(Sprite)-> sprites: the array of sprites to  //
+    //  animate the shot                                //
+    //--------------------------------------------------//
+
     super(x);
     this.x += 16;
     this.y = y - 16;
@@ -614,8 +639,10 @@ class CrawlerShot extends Shot {
 
   draw(x, y) {
     //--------------------------------------------------//
-    //Draws the sprite, advancing it 6 pixesls for     //
+    //Draws the sprite, advancing it 6 pixesls for      //
     //  each frame                                      //
+    //--------------------------------------------------//
+    //integer-> x, y: where to draw the shot            //
     //--------------------------------------------------//
 
     if (this.count % 2 === 0) {
@@ -673,6 +700,13 @@ class Ship {
   }
 
   currentSprite(num) {
+    //--------------------------------------------------//
+    //integer-> num: index of the current sprite        //
+    //--------------------------------------------------//
+    //return-> Sprite: the sprite object of the current //
+    //  sprite                                          //
+    //--------------------------------------------------//
+
     return this.currentAnimation[num % this.currentAnimation.length];
   }
 
@@ -715,6 +749,7 @@ class Ship {
     //--------------------------------------------------//
     //The actions that need to be taken during each     //
     //  loop of the game loop                           //
+    //--------------------------------------------------//
     //integer-> x, y: the position at which to draw the //
     //  object                                          //
     //--------------------------------------------------//
@@ -742,6 +777,10 @@ class Ship {
   }
 
   die() {
+    //--------------------------------------------------//
+    //The basic actions to take when a ship is killed   //
+    //--------------------------------------------------//
+
     this.dead = true;
     this.currentAnimation = this.death;
     this.sprite = 0;
@@ -755,6 +794,28 @@ class Player extends Ship {
   //----------------------------------------------------//
 
   constructor(x, y) {
+    //--------------------------------------------------//
+    //integer-> x, y: where to initially draw the       //
+    //  object on the coordinate plane                  //
+    //--------------------------------------------------//
+    //integer-> h, w: height and width of the object    //
+    //  in pixels                                       //
+    //integer-> lives: how many lives the player has    //
+    //integer-> ammo: starting ammo of the player       //
+    //array(Sprite)-> sprites: sprites for the default  //
+    //  animation of the ship                           //
+    //array(Sprite)-> fire: sprites for the firing      //
+    //  animation                                       //
+    //array(Sprite)-> death: sprites for the death      //
+    //  animation of the ship                           //
+    //array(array)-> colliders: objects to test for     //
+    //  collisions                                      //
+    //array(Sprite)-> currentAnimation: the animation   //
+    //  sequence that is currently being animated       //
+    //boolean-> shot: whether or not the player's ship  //
+    //  has fired                                       //
+    //--------------------------------------------------//
+
     super(x, y);
     this.w = 32;
     this.h = 32;
@@ -816,8 +877,7 @@ class Player extends Ship {
     //The actions that need to be taken during each     //
     //  loop of the game loop                           //
     //--------------------------------------------------//
-    //integer-> x, y: the position at which to draw the //
-    //  object                                          //
+    //integer-> c: current frame count of the main loop //
     //--------------------------------------------------//
     //
     //Update the sprite every other frame
@@ -867,6 +927,10 @@ class Player extends Ship {
   }
 
   shoot() {
+    //------------------------------------------------//
+    //What to do when the player shoots               //
+    //------------------------------------------------//
+
     if (this.ammo > 0 && !this.shot) {
       this.currentAnimation = this.fire;
       this.queuedAction = function() {
@@ -1347,6 +1411,16 @@ document.addEventListener("keydown", KeyState.gameKeysDown);
 document.addEventListener("keyup", KeyState.gameKeysUp);
 
 function initLoop(tFrame) {
+  //----------------------------------------------------//
+  //Runs while the game is loading, ends when all assets//
+  //  have loaded                                       //
+  //----------------------------------------------------//
+  //float-> tFrame: exact time the function is run in   //
+  //  milliseconds                                      //
+  //----------------------------------------------------//
+  //
+  //If all assets have loaded, then load the next loop.
+  //Otherwise, keep looping
   if (preload === 9) {
     cancelAnimationFrame(activeLoop);
     newGameInit();
@@ -1357,7 +1431,10 @@ function initLoop(tFrame) {
 }
 
 function newGameInit() {
-  //ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+  //----------------------------------------------------//
+  //Sets up the information for the newGameLoop         //
+  //----------------------------------------------------//
+
   player = new Player(346, 416);
   endLoop = false;
   loopCount = 0;
@@ -1370,6 +1447,13 @@ function newGameInit() {
 }
 
 function newGameLoop(tFrame) {
+  //----------------------------------------------------//
+  //Runs before the player starts the game              //
+  //----------------------------------------------------//
+  //float-> tFrame: exact time the function is run in   //
+  //  milliseconds                                      //
+  //----------------------------------------------------//
+
   if (endLoop) {
     cancelAnimationFrame(activeLoop);
     score = 0;
@@ -1390,6 +1474,9 @@ function newGameLoop(tFrame) {
 }
 
 function gameInit() {
+  //----------------------------------------------------//
+  //Sets up the main game loop to run                   //
+  //----------------------------------------------------//
   //
   //Assign key functions
   keyState = new KeyState;
@@ -1417,6 +1504,13 @@ function gameInit() {
 }
 
 function gameLoop(tFrame) {
+  //----------------------------------------------------//
+  //The main game loop                                  //
+  //----------------------------------------------------//
+  //float-> tFrame: exact time the function is run in   //
+  //  milliseconds                                      //
+  //----------------------------------------------------//
+
   ctx.clearRect(0, 0, canvasWidth, canvasHeight);
   if (endLoop) {
     cancelAnimationFrame(activeLoop);
@@ -1426,6 +1520,10 @@ function gameLoop(tFrame) {
   }
 
   if (loopCount % 2 === 0) {
+    //--------------------------------------------------//
+    //Moves the background layers                       //
+    //--------------------------------------------------//
+
     bgPos1 += 3;
     drawBg(bgPos1, level1, levelCtx);
     bgPos2 += 6;
@@ -1434,6 +1532,11 @@ function gameLoop(tFrame) {
   //
   //Warm-up/Intro
   if (loopCount < 120) {
+    //--------------------------------------------------//
+    //Displays get ready for 2 seconds before starting  //
+    //  the game                                        //
+    //--------------------------------------------------//
+
     if (loopCount % 30 > 15) {
       write2screen(ctx, "center", 226, "Get Ready!", 2);
     }
@@ -1441,10 +1544,17 @@ function gameLoop(tFrame) {
       player.update(loopCount);
     }
   } else {
+    //--------------------------------------------------//
+    //Updates the player sprite                         //
+    //--------------------------------------------------//
+
     player.update(loopCount);
   }
-
+  //
+  //Monitors the key presses
   keyState.update();
+  //
+  //Animates/moves all of the player's shots
   shots.forEach(x => {
     if (x.y < 0) {
       shots.shift();
@@ -1452,6 +1562,8 @@ function gameLoop(tFrame) {
       x.draw(player.x, player.y);
     }
   });
+  //
+  //Animates/moves all of the enemies shots
   enemyShots.forEach(x => {
     if (x.y > canvasHeight) {
       enemyShots.shift();
@@ -1461,6 +1573,11 @@ function gameLoop(tFrame) {
   });
   //if (loopCount > 120 && enemies.length < 1) makeEnemy("crawler");
   if (loopCount % 30 === 0 && loopCount > 120) {
+    //--------------------------------------------------//
+    //Randomly makes an enemy every half second as long //
+    //  as there are fewer than 7 on screen             //
+    //--------------------------------------------------//
+
     if (enemies.length < 7) {
       let rndEnemy = rnd(1, 100);
       if (rndEnemy % 4 === 0) {
@@ -1474,6 +1591,8 @@ function gameLoop(tFrame) {
       }
     }
   }
+  //
+  //Animates/moves all of the enemies
   enemies.forEach((x, i) => x.update(x.x, x.y, i, loopCount));
 
   //console.log(tFrame);
@@ -1481,6 +1600,10 @@ function gameLoop(tFrame) {
 }
 
 function gameOverInit() {
+  //----------------------------------------------------//
+  //Sets up the gameOverLoop                            //
+  //----------------------------------------------------//
+
   endLoop = false;
   loopCount = 0;
   keyState = new KeyState;
@@ -1492,6 +1615,13 @@ function gameOverInit() {
 }
 
 function gameOverLoop(tFrame) {
+  //----------------------------------------------------//
+  //Loops after the player has lost all of their lives  //
+  //----------------------------------------------------//
+  //float-> tFrame: exact time the function is run in   //
+  //  milliseconds                                      //
+  //----------------------------------------------------//
+
   if (endLoop) {
     cancelAnimationFrame(activeLoop);
     statCtx.clearRect(0, 0, 720, 32);
