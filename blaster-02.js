@@ -344,7 +344,7 @@ function drawBg(y, level, ctx) {
   //canvas-> level: which level to draw                 //
   //----------------------------------------------------//
 
-  ctx .clearRect(0, 0, 720, 480);
+  ctx.clearRect(0, 0, 720, 480);
   y %= 960;
   if (y > 480) {
     ctx.drawImage(level, 0, 960 - (y - 480), 720, y - 480, 0, 0, 720, y - 480);
@@ -591,7 +591,7 @@ class BomberShot extends Shot {
 
   draw(x, y) {
     //--------------------------------------------------//
-    //Draws the sprite, advancing it 6 pixesls for      //
+    //Draws the sprite, advancing it 6 pixels for      //
     //  each frame                                      //
     //--------------------------------------------------//
     //integer-> x, y: where to draw the shot            //
@@ -668,20 +668,20 @@ class Ship {
     //integer-> x, y: where to initially draw the       //
     //  object on the coordinate plane                  //
     //--------------------------------------------------//
-    //integer-> h, w: height and width of the object    //
+    //h, w(integer): height and width of the object     //
     //  in pixels                                       //
-    //integer-> count: used internally when ships need  //
+    //count(integer): used internally when ships need   //
     //  to count frames                                 //
-    //boolean-> dead: whether or not the ship is dead   //
-    //array(Sprite)-> sprites: sprites for the default  //
+    //dead(boolean): whether or not the ship is dead    //
+    //sprites(array[Sprite]): sprites for the default   //
     //  animation of the ship                           //
-    //array(Sprite)-> death: sprites for the death      //
+    //death(array[Sprite]): sprites for the death       //
     //  animation of the ship                           //
-    //integer-> sprite: index of the current sprite in  //
+    //sprite(integer): index of the current sprite in   //
     //  the animation                                   //
-    //array(array)-> colliders: objects to test for     //
+    //colliders(array[array]): objects to test for      //
     //  collisions                                      //
-    //function-> queuedAction: action to take at the end//
+    //queuedAction(function): action to take at the end //
     //  of a non-default animation cycle (eg, death)    //
     //--------------------------------------------------//
 
@@ -701,7 +701,7 @@ class Ship {
 
   currentSprite(num) {
     //--------------------------------------------------//
-    //integer-> num: index of the current sprite        //
+    //num(integer): index of the current sprite         //
     //--------------------------------------------------//
     //return-> Sprite: the sprite object of the current //
     //  sprite                                          //
@@ -750,7 +750,7 @@ class Ship {
     //The actions that need to be taken during each     //
     //  loop of the game loop                           //
     //--------------------------------------------------//
-    //integer-> x, y: the position at which to draw the //
+    //x, y(integer): the position at which to draw the  //
     //  object                                          //
     //--------------------------------------------------//
 
@@ -769,7 +769,7 @@ class Ship {
     //--------------------------------------------------//
     //Draws the object on the screen                    //
     //--------------------------------------------------//
-    //integer-> x, y: Where to draw the ship            //
+    //x, y(integer): Where to draw the ship             //
     //--------------------------------------------------//
 
     let img = this.currentSprite(this.sprite);
@@ -795,24 +795,24 @@ class Player extends Ship {
 
   constructor(x, y) {
     //--------------------------------------------------//
-    //integer-> x, y: where to initially draw the       //
+    //x, y(integer): where to initially draw the        //
     //  object on the coordinate plane                  //
     //--------------------------------------------------//
-    //integer-> h, w: height and width of the object    //
+    //h, w(integer): height and width of the object     //
     //  in pixels                                       //
-    //integer-> lives: how many lives the player has    //
-    //integer-> ammo: starting ammo of the player       //
-    //array(Sprite)-> sprites: sprites for the default  //
+    //lives(integer): how many lives the player has     //
+    //ammo(integer): starting ammo of the player        //
+    //sprites(array[Sprite]): sprites for the default   //
     //  animation of the ship                           //
-    //array(Sprite)-> fire: sprites for the firing      //
+    //fire(array[Sprite]): sprites for the firing       //
     //  animation                                       //
-    //array(Sprite)-> death: sprites for the death      //
+    //death(array[Sprite]): sprites for the death       //
     //  animation of the ship                           //
-    //array(array)-> colliders: objects to test for     //
+    //colliders(array[array]): objects to test for     //
     //  collisions                                      //
-    //array(Sprite)-> currentAnimation: the animation   //
+    //currentAnimation(array[Sprite]): the animation   //
     //  sequence that is currently being animated       //
-    //boolean-> shot: whether or not the player's ship  //
+    //shot(boolean): whether or not the player's ship  //
     //  has fired                                       //
     //--------------------------------------------------//
 
@@ -877,7 +877,7 @@ class Player extends Ship {
     //The actions that need to be taken during each     //
     //  loop of the game loop                           //
     //--------------------------------------------------//
-    //integer-> c: current frame count of the main loop //
+    //c(integer): current frame count of the main loop  //
     //--------------------------------------------------//
     //
     //Update the sprite every other frame
@@ -912,7 +912,7 @@ class Player extends Ship {
     //Updates the ship's position and prevents it from  //
     //  leaving the bounds of the <canvas>              //
     //--------------------------------------------------//
-    //integer-> x, y: How much to change the position   //
+    //x, y(integer): How much to change the position    //
     //  of the ship                                     //
     //--------------------------------------------------//
 
@@ -1014,10 +1014,10 @@ class Ray extends Ship {
     //The actions that need to be taken during each     //
     //  loop of the game loop                           //
     //--------------------------------------------------//
-    //integer-> x, y: the position at which to draw the //
+    //x, y(integer): the position at which to draw the  //
     //  ship                                            //
-    //integer-> i: enemy's index in the enemy array     //
-    //integer-> c: current frame count                  //
+    //i(integer): enemy's index in the enemy array      //
+    //c(integer): current frame count                   //
     //--------------------------------------------------//
 
     if (c % 3 === 0) {
@@ -1052,7 +1052,8 @@ class Ray extends Ship {
     //--------------------------------------------------//
     //Updates the ship's position and prevents it from  //
     //  leaving the bounds of the <canvas>              //
-    //integer-> x, y: How much to change the position   //
+    //--------------------------------------------------//
+    //x, y(integer): How much to change the position    //
     //  of the ship                                     //
     //--------------------------------------------------//
 
@@ -1081,10 +1082,10 @@ class Ring extends Ship {
     //The actions that need to be taken during each     //
     //  loop of the game loop                           //
     //--------------------------------------------------//
-    //integer-> x, y: the position at which to draw the //
+    //x, y(integer): the position at which to draw the  //
     //  ship                                            //
-    //integer-> i: enemy's index in the enemy array     //
-    //integer-> c: current frame count                  //
+    //i(integer): enemy's index in the enemy array      //
+    //c(integer): current frame count                   //
     //--------------------------------------------------//
 
     if (c % 3 === 0) {
@@ -1121,7 +1122,7 @@ class Ring extends Ship {
     //Updates the ship's position and recycles it to the//
     //  top of the screen if it leaves the screen       //
     //--------------------------------------------------//
-    //integer-> x, y: How much to change the position   //
+    //x, y(integer): How much to change the position    //
     //  of the ship                                     //
     //--------------------------------------------------//
 
@@ -1153,10 +1154,10 @@ class Bomber extends Ship {
     //The actions that need to be taken during each     //
     //  loop of the game loop                           //
     //--------------------------------------------------//
-    //integer-> x, y: the position at which to draw the //
+    //x, y(integer): the position at which to draw the  //
     //  ship                                            //
-    //integer-> i: enemy's index in the enemy array     //
-    //integer-> c: current frame count                  //
+    //i(integer): enemy's index in the enemy array      //
+    //c(integer): current frame count                   //
     //--------------------------------------------------//
 
     if (c % 4 === 0) {
@@ -1203,12 +1204,13 @@ class Bomber extends Ship {
     //Updates the ship's position and recycles it to the//
     //  top of the screen if it leaves the screen       //
     //--------------------------------------------------//
-    //integer-> x, y: How much to change the position   //
+    //x, y(integer): How much to change the position    //
     //  of the ship                                     //
     //--------------------------------------------------//
 
     if (this.x + (x * this.direction) < 32 ||
-        this.x + (x * this.direction) > canvasWidth - 32) {
+        this.x + (x * this.direction) > canvasWidth - 32)
+        {
           this.direction *= -1;
         }
     this.x = this.x + (x * this.direction);
@@ -1304,18 +1306,20 @@ class Crawler extends Ship {
     //Updates the ship's position and recycles it to the//
     //  top of the screen if it leaves the screen       //
     //--------------------------------------------------//
-    //integer-> x, y: How much to change the position   //
+    //x, y(integer): How much to change the position    //
     //  of the ship                                     //
     //--------------------------------------------------//
 
     if (this.x + (x * this.xDir) < 32 ||
-        this.x + (x * this.xDir) > canvasWidth - 32) {
+        this.x + (x * this.xDir) > canvasWidth - 32)
+        {
           this.xDir *= -1;
         }
     this.x = this.x + (x * this.xDir);
     if (this.count > 12) {
       if (this.y + (y * this.yDir) < 8 ||
-          this.y + (y * this.yDir) > 240) {
+          this.y + (y * this.yDir) > 240)
+          {
             this.yDir *= -1;
           }
     }
@@ -1350,7 +1354,7 @@ class KeyState {
 
   constructor() {
     //----------------------------------------------------//
-    //boolean-> all: the state of each key press         //
+    //all(boolean): the state of each key press         //
     //----------------------------------------------------//
 
     this.left = false;
@@ -1381,7 +1385,7 @@ class KeyState {
     //--------------------------------------------------//
     //Listens for a key to be pressed down              //
     //--------------------------------------------------//
-    //event-> event: the key down event                 //
+    //event(event): the key down event                  //
     //--------------------------------------------------//
 
     //console.log(event.code);
@@ -1396,7 +1400,7 @@ class KeyState {
     //----------------------------------------------------//
     //Listens for a key to be released                    //
     //----------------------------------------------------//
-    //event-> event: the keyboard event                   //
+    //event(event): the keyboard event                   //
     //----------------------------------------------------//
 
     if (event.code === "ArrowUp") keyState.up = false;
@@ -1415,7 +1419,7 @@ function initLoop(tFrame) {
   //Runs while the game is loading, ends when all assets//
   //  have loaded                                       //
   //----------------------------------------------------//
-  //float-> tFrame: exact time the function is run in   //
+  //tFrame(float): exact time the function is run in    //
   //  milliseconds                                      //
   //----------------------------------------------------//
   //
@@ -1450,7 +1454,7 @@ function newGameLoop(tFrame) {
   //----------------------------------------------------//
   //Runs before the player starts the game              //
   //----------------------------------------------------//
-  //float-> tFrame: exact time the function is run in   //
+  //tFrame(float): exact time the function is run in    //
   //  milliseconds                                      //
   //----------------------------------------------------//
 
@@ -1462,6 +1466,7 @@ function newGameLoop(tFrame) {
   } else {
     requestAnimationFrame(newGameLoop);
   }
+
   ctx.clearRect(0, 0, canvasWidth, canvasHeight);
   ctx.drawImage(spriteSheet, 0, 288, 128, 64, 232, 100, 256, 128);
 
@@ -1507,7 +1512,7 @@ function gameLoop(tFrame) {
   //----------------------------------------------------//
   //The main game loop                                  //
   //----------------------------------------------------//
-  //float-> tFrame: exact time the function is run in   //
+  //tFrame(float): exact time the function is run in    //
   //  milliseconds                                      //
   //----------------------------------------------------//
 
@@ -1618,7 +1623,7 @@ function gameOverLoop(tFrame) {
   //----------------------------------------------------//
   //Loops after the player has lost all of their lives  //
   //----------------------------------------------------//
-  //float-> tFrame: exact time the function is run in   //
+  //tFrame(float): exact time the function is run in    //
   //  milliseconds                                      //
   //----------------------------------------------------//
 
