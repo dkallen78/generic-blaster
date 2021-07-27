@@ -112,8 +112,11 @@ function init() {
   //
   //Load image data (preload: 4)
   (function() {
+    //----------------------------------------------------//
+    //Makes the canvases that show the level background   //
+    //----------------------------------------------------//
     //
-    //Make the level background canvases
+    //The lower background canvas
     let levelCanvas = makeElement("canvas", "levelCanvas");
     gameScreen.appendChild(levelCanvas);
     levelCanvas.setAttribute("width", canvasWidth);
@@ -121,7 +124,8 @@ function init() {
 
     levelCtx = levelCanvas.getContext("2d");
     levelCtx.imageSmoothingEnabled = false;
-
+    //
+    //The upper background canvas
     let levelTopCanvas = makeElement("canvas", "levelTopCanvas");
     gameScreen.appendChild(levelTopCanvas);
     levelTopCanvas.setAttribute("width", canvasWidth);
@@ -130,17 +134,18 @@ function init() {
     levelTopCtx = levelTopCanvas.getContext("2d");
     levelTopCtx.imageSmoothingEnabled = false;
     //
-    //Make the primary canvas
+    //Make the primary canvas upon which the player, enemies,
+    //  and shots are drawn
     let gameCanvas = makeElement("canvas", "gameCanvas");
     gameScreen.appendChild(gameCanvas);
     gameCanvas.setAttribute("height", canvasHeight);
     gameCanvas.setAttribute("width", canvasWidth);
-    //
-    //Setting the context
+
     ctx = gameCanvas.getContext("2d");
     ctx.imageSmoothingEnabled = false;
     //
-    //Make the in-game stats canvas
+    //Make the in-game stats canvas for displaying ammo, score,
+    //  and player lives
     let statCanvas = makeElement("canvas", "statCanvas");
     gameScreen.appendChild(statCanvas);
     statCanvas.setAttribute("width", canvasWidth);
@@ -173,7 +178,8 @@ function init() {
       fontSheetCtx.drawImage(whiteFont, 0, 0, 64, 40);
       preload++;
     }
-
+    //
+    //Loads the lower background level image
     let backgroundMap1 = new Image();
     backgroundMap1.src = "map1-2.png";
     backgroundMap1.onload = function() {
@@ -184,7 +190,8 @@ function init() {
       level1Ctx.drawImage(backgroundMap1, 0, 0, 720, 960);
       preload++;
     }
-
+    //
+    //Loads the upper background level image
     let bgMapTop = new Image();
     bgMapTop.src = "map1-clouds.png";
     bgMapTop.onload = function() {
