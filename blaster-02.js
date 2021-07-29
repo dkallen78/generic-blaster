@@ -53,7 +53,8 @@ function init() {
     const AudioContext = window.AudioContext || window. webkitAudioContext;
 
     audioCtx = new AudioContext();
-
+    //
+    //Sound made when the player shoots
     fetch("audio/zap4.mp3")
       .then(function(response) {
         return response.arrayBuffer();
@@ -64,7 +65,8 @@ function init() {
           preload++;
         });
       });
-
+    //
+    //Sound made when the player dies
     fetch("audio/death5.mp3")
       .then(function(response) {
         return response.arrayBuffer();
@@ -75,7 +77,8 @@ function init() {
           preload++;
         });
       });
-
+    //
+    //Sound made when the ammo is reloaded
     fetch("audio/ammoUp.mp3")
       .then(function(response) {
         return response.arrayBuffer();
@@ -86,7 +89,8 @@ function init() {
           preload++;
         });
       });
-
+    //
+    //Background music
     fetch("audio/short-space-loop2.mp3")
       .then(function(response) {
         return response.arrayBuffer();
@@ -97,7 +101,8 @@ function init() {
           preload++;
         });
       });
-
+    //
+    //Sound made when the bomber enemy fires
     fetch("audio/bomberSound.mp3")
       .then(function(response) {
         return response.arrayBuffer();
@@ -210,10 +215,11 @@ function makeElement(type, id, ...classes) {
   //----------------------------------------------------//
   //Returns an HTML element                             //
   //----------------------------------------------------//
-  //string-> type: type of element to be returned       //
-  //string-> id: id of the element                      //
-  //string-> classes: classes to add to the element     //
-  //return-> element: element that was made             //
+  //type(string): type of element to be returned        //
+  //id(string): id of the element                       //
+  //classes(string): classes to add to the element      //
+  //----------------------------------------------------//
+  //return(element): element that was made              //
   //----------------------------------------------------//
 
   let element = document.createElement(type);
@@ -224,12 +230,12 @@ function makeElement(type, id, ...classes) {
 
 function rnd (floor, ceiling) {
   //----------------------------------------------------//
-  //Gets a random number within a range of numbers      //
+  //Generates a random number within a range of numbers //
   //----------------------------------------------------//
-  //integer-> floor: lower bound of the random number   //
-  //integer-> ceiling: upper bound of the random number //
-  //return-> integer: random number between [floor]     //
-  //  and [ceiling]                                     //
+  //floor(integer): lower bound of the random number    //
+  //ceiling(integer): upper bound of the random number  //
+  //----------------------------------------------------//
+  //return(integer): random number w/in the range       //
   //----------------------------------------------------//
 
   let range = (ceiling - floor) + 1;
@@ -240,16 +246,20 @@ function write2screen(ctx, xPos, yPos, string, size = 1) {
   //----------------------------------------------------//
   //Adds sprite based letters to the screen             //
   //----------------------------------------------------//
-  //integer/string-> xPos: position of the top left     //
-  //  corner of the first lette of the string. Can also //
-  //  be a string indicating alignment: "center",       //
+  //xPos(integer/string): position of the top left      //
+  //  corner of the first letter of the string. Can     //
+  //  also be a string indicating alignment: "center",  //
   //  "left", or "right"                                //
-  //integer-> yPos: position of the top left pixel of   //
+  //yPos(integer): position of the top left pixel of    //
   //  the first letter                                  //
-  //string-> string: string to be put on screen         //
+  //string(string): string to be put on screen          //
   //----------------------------------------------------//
 
   let chars = {
+    //----------------------------------------------------//
+    //The locations of each letter within the sprite sheet//
+    //----------------------------------------------------//
+
     "A": new Sprite(0, 0, 8, 8),
     "B": new Sprite(8, 0, 8, 8),
     "C": new Sprite(16, 0, 8, 8),
@@ -306,7 +316,7 @@ function playSfx(buffer) {
   //----------------------------------------------------//
   //Plays a sound effect                                //
   //----------------------------------------------------//
-  //binary-> buffer: audio buffer to be played          //
+  //buffer(binary): audio buffer to be played           //
   //----------------------------------------------------//
 
   let source = audioCtx.createBufferSource();
@@ -320,7 +330,7 @@ function playBGM(buffer) {
   //----------------------------------------------------//
   //Plays background music                              //
   //----------------------------------------------------//
-  //binary-> buffer: audio buffer to be played          //
+  //buffer(binary): audio buffer to be played           //
   //----------------------------------------------------//
 
   let source = audioCtx.createBufferSource();
@@ -347,8 +357,8 @@ function drawBg(y, level, ctx) {
   //----------------------------------------------------//
   //Displays the level background                       //
   //----------------------------------------------------//
-  //integer-> y: the y position of the background       //
-  //canvas-> level: which level to draw                 //
+  //y(integer): the y position of the background        //
+  //level(canvas): which level to draw                  //
   //----------------------------------------------------//
 
   ctx.clearRect(0, 0, 720, 480);
@@ -365,7 +375,7 @@ function showScore(score) {
   //----------------------------------------------------//
   //Shows the player's score                            //
   //----------------------------------------------------//
-  //integer-> score: score to display                   //
+  //score(integer): score to display                    //
   //----------------------------------------------------//
 
   statCtx.clearRect(8, 12, 96, 8);
@@ -389,7 +399,7 @@ function showAmmo(ammo) {
   //----------------------------------------------------//
   //Shows how much ammo the player has                  //
   //----------------------------------------------------//
-  //integer-> ammo: ammo to display                     //
+  //ammo(integer): ammo to display                      //
   //----------------------------------------------------//
 
   statCtx.clearRect(259, 7, 201, 18);
@@ -415,7 +425,7 @@ function showLives(lives) {
   //----------------------------------------------------//
   //Shows how many lives the player has left            //
   //----------------------------------------------------//
-  //integer-> lives: how many lives to display          //
+  //lives(integer): how many lives to display          //
   //----------------------------------------------------//
 
   statCtx.clearRect(672, 8, 704, 16);
@@ -428,7 +438,7 @@ function makeEnemy(type) {
   //----------------------------------------------------//
   //Makes a new enemy and puts them in the enemy array  //
   //----------------------------------------------------//
-  //string-> type: type of enemy to create              //
+  //type(string): type of enemy to create               //
   //----------------------------------------------------//
 
   let xPos;
@@ -465,9 +475,9 @@ class Sprite {
 
   constructor(x, y, w, h) {
     //--------------------------------------------------//
-    //integer-> x, y: the top left corner of the sprite //
+    //x, y(integer): the top left corner of the sprite  //
     //  on the sprite sheet                             //
-    //integer-> w, h: the height and width of the sprite//
+    //w, h(integer): the height and width of the sprite //
     //--------------------------------------------------//
 
     this.x = x;
@@ -481,16 +491,16 @@ class Sprite {
     //Makes an array of Sprites based on the position   //
     //  of the first element                            //
     //--------------------------------------------------//
-    //integer-> xStart, yStart: the starting coordinates//
+    //xStart, yStart(ingeger): the starting coordinates //
     //  for the top left corner of the first sprite     //
-    //integer-> xSize, ySize: the size in pixels of the //
+    //xSize, ySize(integer): the size in pixels of the  //
     //  sprites to be loaded                            //
-    //string-> direction: the orientation of the sprites//
+    //direction(string): the orientation of the sprites //
     //  on the sprite sheet                             //
-    //integer-> frames: the number of sprites to be     //
+    //frames(integer): the number of sprites to be      //
     //  loaded into the array                           //
     //--------------------------------------------------//
-    //return-> array: Sprite objects                    //
+    //return(array): Sprite objects                     //
     //--------------------------------------------------//
 
     let array = [];
@@ -517,15 +527,15 @@ class Shot {
 
   constructor(x = player.x, y = player.y) {
     //--------------------------------------------------//
-    //integer-> x, y: where to first place              //
+    //x, y(integer): where to first place               //
     //  the shot sprite                                 //
     //--------------------------------------------------//
-    //integer-> w, h: width and height of the sprite    //
-    //integer-> count: an internal counter used for     //
+    //w, h(integer): width and height of the sprite     //
+    //count(integer): an internal counter used for      //
     //  animation timing                                //
-    //integer-> sprite: current sprite in the animation //
+    //sprite(integer): current sprite in the animation  //
     //  cycle                                           //
-    //array(Sprite)-> sprites: the sprites used in the  //
+    //sprites(array[Sprite]): the sprites used in the   //
     //  animation                                       //
     //--------------------------------------------------//
 
@@ -543,10 +553,13 @@ class Shot {
 
   currentSprite(num) {
     //--------------------------------------------------//
-    //Current sprite in the animation cycle             //
+    //Returns the current sprite in the animation cycle //
     //--------------------------------------------------//
-    //integer-> num: number of sprite in the animation  //
+    //num(integer): number of sprite in the animation   //
     //  array                                           //
+    //--------------------------------------------------//
+    //return(Sprite): current sprite in the animation   //
+    //  cycle                                           //
     //--------------------------------------------------//
 
     return this.sprites[num % this.sprites.length];
@@ -556,7 +569,7 @@ class Shot {
     //--------------------------------------------------//
     //Draws the sprite on the screen                    //
     //--------------------------------------------------//
-    //integer-> x, y: top left corner of where to draw  //
+    //x, y(integer): top left corner of where to draw   //
     //  the sprite                                      //
     //--------------------------------------------------//
 
@@ -582,11 +595,11 @@ class BomberShot extends Shot {
 
   constructor(x, y) {
     //--------------------------------------------------//
-    //integer-> x, y: where to first place              //
+    //x, y(integer): where to first place               //
     //  the shot sprite                                 //
     //--------------------------------------------------//
-    //integer-> w, h: width and height of the sprite    //
-    //array(Sprite)-> sprites: the array of sprites to  //
+    //w, h(integer): width and height of the sprite     //
+    //sprites(array[Sprite]): the array of sprites to   //
     //  animate the shot                                //
     //--------------------------------------------------//
 
@@ -601,7 +614,7 @@ class BomberShot extends Shot {
     //Draws the sprite, advancing it 6 pixels for      //
     //  each frame                                      //
     //--------------------------------------------------//
-    //integer-> x, y: where to draw the shot            //
+    //x, y(integer): where to draw the shot             //
     //--------------------------------------------------//
 
     if (this.count % 2 === 0) {
@@ -609,7 +622,6 @@ class BomberShot extends Shot {
     }
 
     let img = this.currentSprite(this.sprite);
-
 
     this.y += 6;
     ctx.drawImage(spriteSheet, img.x, img.y, img.w, img.h, this.x, this.y, this.w, this.h);
@@ -625,13 +637,13 @@ class CrawlerShot extends Shot {
 
   constructor(x, y, xChange) {
     //--------------------------------------------------//
-    //integer-> x, y: where to first place              //
+    //x, y(integer): where to first place               //
     //  the shot sprite                                 //
     //--------------------------------------------------//
-    //integer-> w, h: width and height of the sprite    //
-    //integer-> xChange: how much to change the x       //
+    //w, h(integer): width and height of the sprite     //
+    //xChange(integer): how much to change the x        //
     //  position of the shot each frame                 //
-    //array(Sprite)-> sprites: the array of sprites to  //
+    //sprites(array[Sprite]): the array of sprites to   //
     //  animate the shot                                //
     //--------------------------------------------------//
 
@@ -649,7 +661,7 @@ class CrawlerShot extends Shot {
     //Draws the sprite, advancing it 6 pixesls for      //
     //  each frame                                      //
     //--------------------------------------------------//
-    //integer-> x, y: where to draw the shot            //
+    //x, y(integer): where to draw the shot             //
     //--------------------------------------------------//
 
     if (this.count % 2 === 0) {
@@ -672,7 +684,7 @@ class Ship {
 
   constructor(x, y) {
     //--------------------------------------------------//
-    //integer-> x, y: where to initially draw the       //
+    //x, y(integer): where to initially draw the        //
     //  object on the coordinate plane                  //
     //--------------------------------------------------//
     //h, w(integer): height and width of the object     //
@@ -710,7 +722,7 @@ class Ship {
     //--------------------------------------------------//
     //num(integer): index of the current sprite         //
     //--------------------------------------------------//
-    //return-> Sprite: the sprite object of the current //
+    //return(Sprite): the sprite object of the current //
     //  sprite                                          //
     //--------------------------------------------------//
 
@@ -719,7 +731,7 @@ class Ship {
 
   get lastSprite() {
     //--------------------------------------------------//
-    //return-> boolean: whether or not the current      //
+    //return(boolean): whether or not the current      //
     //  sprite is the last one it its animation cycle   //
     //--------------------------------------------------//
 
@@ -731,7 +743,7 @@ class Ship {
     //Checks the [this.colliders] array to see if a     //
     //  collision has occurred                          //
     //--------------------------------------------------//
-    //return-> boolean: true for collision              //
+    //return(boolean): true for collision              //
     //--------------------------------------------------//
 
     //console.log(this.x, this.y, this.w, this.h);
